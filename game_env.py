@@ -73,6 +73,7 @@ class CustomEnv(gym.Env):
   #Reward is -power not delivered
   def _calculate_reward(self):
     pass
+
   def reset(self):
     # Reset the state of the environment to an initial state
     self.network = self.INITIAL_NETWORK.copy()
@@ -80,6 +81,7 @@ class CustomEnv(gym.Env):
     self.removed_lines = {None}
     self.current_step = 0
     return self.lines()
+  #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
     pass
