@@ -5,6 +5,7 @@ from pypsa import Network
 import pandas as pd
 import numpy as np
 import random
+import matplotlib.pyplot as plt, mpld3
 
 class PowerGrid(gym.Env):
 
@@ -92,4 +93,15 @@ class PowerGrid(gym.Env):
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
+    venom = network.loads.p_set/102
+    venom.describe()
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    data = network.plot(bus_colors=venom, bus_cmap=plt.cm.jet)
+    value = network.loads["p_set"].to_numpy()
+
+    tooltip = mpld3.plugins.PointHTMLTooltip(data[0], value, 0, 0, -50)
+    fileName = "network" + str(3) + ".html" 
+    mpld3.plugins.connect(fig,tooltip)
+    mpld3.save_html(fig, fileName)
     pass
