@@ -46,13 +46,17 @@ class CustomEnv(gym.Env):
     
     self.current_step +=1
     
+    reward,isFailure = self._calculate_reward()
+    #Check if network is infeasible 
+    if isFailure:
+      done = True
     #Check if network has no lines
     if self.network.lines.shape[0] == 0:
       done = True
     #Check if horizon reached
     if self.current_step == self.timesteps:
       done = True
-    reward = self._calculate_reward()
+    
     observation = self.lines
     
     return  observation, reward, done, {}
@@ -72,7 +76,15 @@ class CustomEnv(gym.Env):
   #TODO calculate reward from self.network object
   #Reward is -power not delivered
   def _calculate_reward(self):
-    pass
+    lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi')
+    #If not feasible, return negative infinity and True
+    if lopf_status[0] is not 'ok':
+      isFailure = True
+      reward =-float('inf')
+    else:
+      reward = self.network.loads['p_set'].sum()
+      isFailure = False
+    return reward, isFailure
 
   def reset(self):
     # Reset the state of the environment to an initial state
