@@ -6,7 +6,8 @@ import pandas as pd
 import numpy as np
 import random
 
-class CustomEnv(gym.Env):
+class PowerGrid(gym.Env):
+
   """Custom Environment that follows gym interface"""
   metadata = {'render.modes': ['human']}
 
@@ -62,7 +63,6 @@ class CustomEnv(gym.Env):
     return  observation, reward, done, {}
 
     
-  #TODO remove a line
   def _apply_attack(self,attacked_node):
     self.lines[attacked_node] = 0
     self.removed_lines.add(attacked_node)
