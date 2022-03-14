@@ -27,7 +27,7 @@ class PowerGrid(gym.Env):
 
     self.NUM_LINES = self.network.lines.shape[0]
     #Status of each line, start active
-    self.lines = np.ones(self.LINES,dtype = np.int8)
+    self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
     # Actions are defend line, each action correspoonds to the index of the line to defend.
     self.action_space = spaces.Discrete(network.lines.shape[0])
@@ -41,7 +41,7 @@ class PowerGrid(gym.Env):
     #Sample from attack distribution until we get a line thats not removed
     attacker_action = None
     while attacker_action in self.removed_lines:
-      attacker_action = random.choice(range(self.NUM_LINES),weights = self.attack_distribution,k=1)
+      attacker_action = np.random.choice(self.NUM_LINES,p = self.attack_distribution)
     # If not defended, remove line and update network
     if action != attacker_action:
         self._apply_attack(attacker_action)
@@ -89,7 +89,7 @@ class PowerGrid(gym.Env):
     self.lines = np.ones(self.NUM_LINES,dtype=np.int8)
     self.removed_lines = {None}
     self.current_step = 0
-    return self.lines()
+    return self.lines
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
