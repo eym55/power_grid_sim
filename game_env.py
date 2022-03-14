@@ -62,21 +62,17 @@ class CustomEnv(gym.Env):
     return  observation, reward, done, {}
 
     
-  #TODO calculate reward from self.network object
+  #TODO remove a line
   def _apply_attack(self,attacked_node):
     self.lines[attacked_node] = 0
     self.removed_lines.add(attacked_node)
     line_to_remove = self.network.iloc[attacked_node][self.network.lines.index.name]
     self.network.remove("Line",line_to_remove)
-    
-    #TODO calculate power flow
-    
-    pass
-
-  #TODO calculate reward from self.network object
-  #Reward is -power not delivered
-  def _calculate_reward(self):
     lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi')
+    return lopf_status
+
+  #Reward is -power not delivered
+  def _calculate_reward(self,lopf_status):
     #If not feasible, return negative infinity and True
     if lopf_status[0] is not 'ok':
       isFailure = True
