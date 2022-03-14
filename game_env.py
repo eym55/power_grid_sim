@@ -1,4 +1,4 @@
-from http.client import _DataType
+
 import gym
 from gym import spaces
 from pypsa import Network
@@ -13,7 +13,7 @@ class PowerGrid(gym.Env):
   metadata = {'render.modes': ['human']}
 
   def __init__(self, network: Network, attack_distribution,timesteps = 10):
-    super(CustomEnv, self).__init__()
+    super(PowerGrid, self).__init__()
     #Keep track of timesteps and horizen
     self.timesteps = timesteps
     self.current_step = 0
@@ -93,15 +93,18 @@ class PowerGrid(gym.Env):
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
-    venom = network.loads.p_set/102
+    venom = self.network.loads.p_set/102
     venom.describe()
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    data = network.plot(bus_colors=venom, bus_cmap=plt.cm.jet)
-    value = network.loads["p_set"].to_numpy()
+    data = self.network.plot(bus_colors=venom, bus_cmap=plt.cm.jet)
+    value = self.network.loads["p_set"].to_numpy()
 
     tooltip = mpld3.plugins.PointHTMLTooltip(data[0], value, 0, 0, -50)
     fileName = "network" + str(3) + ".html" 
     mpld3.plugins.connect(fig,tooltip)
     mpld3.save_html(fig, fileName)
+    print(self.network)
+    print(self.lines)
+
     pass
