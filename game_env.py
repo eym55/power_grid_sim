@@ -1,4 +1,4 @@
-from http.client import _DataType
+
 import gym
 from gym import spaces
 from pypsa import Network
@@ -7,12 +7,13 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt, mpld3
 
-class CustomEnv(gym.Env):
+class PowerGrid(gym.Env):
+
   """Custom Environment that follows gym interface"""
   metadata = {'render.modes': ['human']}
 
   def __init__(self, network: Network, attack_distribution,timesteps = 10):
-    super(CustomEnv, self).__init__()
+    super(PowerGrid, self).__init__()
     #Keep track of timesteps and horizen
     self.timesteps = timesteps
     self.current_step = 0
@@ -63,21 +64,16 @@ class CustomEnv(gym.Env):
     return  observation, reward, done, {}
 
     
-  #TODO calculate reward from self.network object
   def _apply_attack(self,attacked_node):
     self.lines[attacked_node] = 0
     self.removed_lines.add(attacked_node)
     line_to_remove = self.network.iloc[attacked_node][self.network.lines.index.name]
     self.network.remove("Line",line_to_remove)
-    
-    #TODO calculate power flow
-    
-    pass
-
-  #TODO calculate reward from self.network object
-  #Reward is -power not delivered
-  def _calculate_reward(self):
     lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi')
+    return lopf_status
+
+  #Reward is -power not delivered
+  def _calculate_reward(self,lopf_status):
     #If not feasible, return negative infinity and True
     if lopf_status[0] is not 'ok':
       isFailure = True
@@ -97,15 +93,18 @@ class CustomEnv(gym.Env):
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
-    venom = network.loads.p_set/102
+    venom = self.network.loads.p_set/102
     venom.describe()
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    data = network.plot(bus_colors=venom, bus_cmap=plt.cm.jet)
-    value = network.loads["p_set"].to_numpy()
+    data = self.network.plot(bus_colors=venom, bus_cmap=plt.cm.jet)
+    value = self.network.loads["p_set"].to_numpy()
 
     tooltip = mpld3.plugins.PointHTMLTooltip(data[0], value, 0, 0, -50)
     fileName = "network" + str(3) + ".html" 
     mpld3.plugins.connect(fig,tooltip)
     mpld3.save_html(fig, fileName)
+    print(self.network)
+    print(self.lines)
+
     pass
