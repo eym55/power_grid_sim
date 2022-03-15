@@ -7,6 +7,13 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt, mpld3
 
+import warnings
+warnings.filterwarnings("ignore")
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.CRITICAL)
+
+
 class PowerGrid(gym.Env):
 
   """Custom Environment that follows gym interface"""
@@ -45,7 +52,8 @@ class PowerGrid(gym.Env):
     # If not defended, remove line and update network
     if action != attacker_action:
         lopf_status = self._apply_attack(attacker_action)
-    
+    else:
+      lopf_status = ('ok',None)
     self.current_step +=1
     
     reward,isFailure = self._calculate_reward(lopf_status)
@@ -63,21 +71,27 @@ class PowerGrid(gym.Env):
     
     return  observation, reward, done, {}
 
-    
-  def _apply_attack(self,attacked_node):
-    self.lines[attacked_node] = 0
-    self.removed_lines.add(attacked_node)
-    line_to_remove = self.network.lines.index[attacked_node]
+  def _attacked_line_to_line_name(self,attacked_line):
+    return self.INITIAL_NETWORK.lines.index[attacked_line]
+
+  def _apply_attack(self,attacked_line):
+    self.lines[attacked_line] = 0
+    self.removed_lines.add(attacked_line)
+    line_to_remove = self._attacked_line_to_line_name(attacked_line)
     self.network.remove("Line",line_to_remove)
-    lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi')
+    try:
+      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+    except Exception as e:
+      print(e)
+      lopf_status = ('Failure',None)
     return lopf_status
 
   #Reward is -power not delivered
   def _calculate_reward(self,lopf_status):
     #If not feasible, return negative infinity and True
-    if lopf_status[0] is not 'ok':
+    if lopf_status[0] != 'ok':
       isFailure = True
-      reward =-float('inf')
+      reward =-10000
     else:
       reward = self.network.loads['p_set'].sum()
       isFailure = False
