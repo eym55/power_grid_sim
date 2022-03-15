@@ -5,7 +5,8 @@ from pypsa import Network
 import pandas as pd
 import numpy as np
 import random
-import matplotlib.pyplot as plt, mpld3
+import matplotlib.pyplot as plt
+import mpld3
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -110,8 +111,10 @@ class PowerGrid(gym.Env):
     busValue = list(self.network.buses.index)
     color = self.network.buses_t.p.squeeze()
 
-    fig, ax = plt.subplots(figsize=(12, 6))
+    fig = plt.figure(figsize=(12, 6))
+
     data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
+
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
     fileName = "network" + str(3) + ".html" 
