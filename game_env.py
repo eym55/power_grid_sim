@@ -107,11 +107,11 @@ class PowerGrid(gym.Env):
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
-    busValue = list(network.buses.index)
-    color = network.buses_t.p.squeeze()
+    busValue = list(self.network.buses.index)
+    color = self.network.buses_t.p.squeeze()
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    data = network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
+    data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
     fileName = "network" + str(3) + ".html" 
