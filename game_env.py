@@ -44,11 +44,11 @@ class PowerGrid(gym.Env):
       attacker_action = np.random.choice(self.NUM_LINES,p = self.attack_distribution)
     # If not defended, remove line and update network
     if action != attacker_action:
-        self._apply_attack(attacker_action)
+        lopf_status = self._apply_attack(attacker_action)
     
     self.current_step +=1
     
-    reward,isFailure = self._calculate_reward()
+    reward,isFailure = self._calculate_reward(lopf_status)
     #Check if network is infeasible 
     if isFailure:
       done = True
@@ -67,7 +67,7 @@ class PowerGrid(gym.Env):
   def _apply_attack(self,attacked_node):
     self.lines[attacked_node] = 0
     self.removed_lines.add(attacked_node)
-    line_to_remove = self.network.iloc[attacked_node][self.network.lines.index.name]
+    line_to_remove = self.network.lines.index[attacked_node]
     self.network.remove("Line",line_to_remove)
     lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi')
     return lopf_status
@@ -101,7 +101,7 @@ class PowerGrid(gym.Env):
     value = self.network.loads["p_set"].to_numpy()
 
     tooltip = mpld3.plugins.PointHTMLTooltip(data[0], value, 0, 0, -50)
-    fileName = "network" + str(3) + ".html" 
+    fileName = f"outputs/network{self.current_step}.html" 
     mpld3.plugins.connect(fig,tooltip)
     mpld3.save_html(fig, fileName)
     print(self.network)
