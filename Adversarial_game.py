@@ -15,7 +15,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
 
-class PowerGrid(gym.Env):
+class Adversarial_env(gym.Env):
 
   """Custom Environment that follows gym interface"""
   metadata = {'render.modes': ['human']}

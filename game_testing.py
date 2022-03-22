@@ -1,5 +1,6 @@
 import gym
 from game_env import PowerGrid
+from Adversarial_game import Adversarial_env
 import pypsa
 import numpy as np
 
@@ -16,7 +17,7 @@ for episode in range(10):
     action = np.random.choice(range(LINES))
     obs, rewards, done, info = env.step(action)
     total_reward += rewards
-    env.render()
+    #env.render()
     if done==True:
       break
   print(f"Agent made it {i+1} timesteps and had a total reward of {total_reward}")
