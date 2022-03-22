@@ -91,7 +91,7 @@ class PowerGrid(gym.Env):
     #If not feasible, return negative infinity and True
     if lopf_status[0] != 'ok':
       isFailure = True
-      reward =-10000
+      reward =0
     else:
       reward = self.network.loads['p_set'].sum()
       isFailure = False
@@ -114,7 +114,8 @@ class PowerGrid(gym.Env):
     data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
-    fileName = "network" + str(3) + ".html" 
+    fileName = "outputs/network" + str(self.current_step) + ".html" 
     mpld3.plugins.connect(fig,busTooltip)
     mpld3.save_html(fig, fileName)
+    print("Here")
     pass
