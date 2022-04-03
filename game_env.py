@@ -32,7 +32,7 @@ class PowerGrid(gym.Env):
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
 
-    self.NUM_LINES = self.network.lines.shape[0]
+    self.NUM_LINES = self.INITIAL_NETWORK.lines.shape[0]
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
