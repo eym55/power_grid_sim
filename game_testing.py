@@ -1,5 +1,5 @@
 import gym
-from game_env import PowerGrid
+from defender_game import PowerGrid
 import pypsa
 import numpy as np
 
@@ -25,4 +25,5 @@ for episode in range(2):
   results_rewards.append(total_reward)
 print(results_length,np.mean(results_length))
 print(results_rewards,np.mean(results_rewards))
+
 
