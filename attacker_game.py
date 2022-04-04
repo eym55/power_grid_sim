@@ -1,4 +1,3 @@
-
 import gym
 from gym import spaces
 from pypsa import Network
@@ -33,7 +32,7 @@ class PowerGrid(gym.Env):
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
 
-    self.NUM_LINES = self.network.lines.shape[0]
+    self.NUM_LINES = self.INITIAL_NETWORK.lines.shape[0]
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
@@ -89,14 +88,24 @@ class PowerGrid(gym.Env):
 
   #Reward is -power not delivered
   def _calculate_reward(self,lopf_status):
-    #If not feasible, return negative infinity and True
+    #If not feasible, return positive infinity and True
     if lopf_status[0] != 'ok':
       isFailure = True
-      reward =-10000
+      reward = -np.inf
     else:
       reward = self.network.loads['p_set'].sum()
       isFailure = False
-    return reward, isFailure
+    return -reward, isFailure
+
+  """def choose_action(self):
+    # choose an action randomly based on total q value proportion
+      totq = sum(self.q_table)
+      map = {}
+      for line in self.network.lines:
+        map[line.index] = self.q_table[line.index]/totq
+
+    return np.random.choice(self.NUM_LINES, p = map)"""
+    
 
   def reset(self):
     # Reset the state of the environment to an initial state
@@ -117,7 +126,8 @@ class PowerGrid(gym.Env):
 
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
-    fileName = "network" + str(3) + ".html" 
+    fileName = "outputs/network" + str(self.current_step) + ".html" 
     mpld3.plugins.connect(fig,busTooltip)
     mpld3.save_html(fig, fileName)
+    print("Here")
     pass

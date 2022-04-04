@@ -1,6 +1,10 @@
 import gym
+<<<<<<< HEAD
 from game_env import PowerGrid
 from Adversarial_game import Adversarial_env
+=======
+from defender_game import PowerGrid
+>>>>>>> main
 import pypsa
 import numpy as np
 
@@ -10,10 +14,11 @@ attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 env = PowerGrid(network,attack_distribution)
 results_length= []
 results_rewards=[]
-for episode in range(10):
+for episode in range(2):
   obs = env.reset()
   total_reward = 0
   for i in range(10):
+    env.render()
     action = np.random.choice(range(LINES))
     obs, rewards, done, info = env.step(action)
     total_reward += rewards
@@ -25,4 +30,5 @@ for episode in range(10):
   results_rewards.append(total_reward)
 print(results_length,np.mean(results_length))
 print(results_rewards,np.mean(results_rewards))
+
 
