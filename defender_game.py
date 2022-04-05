@@ -75,27 +75,36 @@ class PowerGrid(gym.Env):
   def _attacked_line_to_line_name(self,attacked_line):
     return self.INITIAL_NETWORK.lines.index[attacked_line]
 
+  def _sc_optimize(self, removed_line_index):
+    now = self.network.snapshots[0]
+    line = self.network.lines.index[removed_line_index:removed_line_index + 1]
+    self.network.sclopf(now,branch_outages=line, solver_name='cbc')
+    self.network.generators_t.p_set = self.network.generators_t.p_set.reindex(columns=self.network.generators.index)
+    self.network.generators_t.p_set.loc[now] = self.network.generators_t.p.loc[now]
+    return None
+
   def _apply_attack(self,attacked_line):
     self.lines[attacked_line] = 0
     self.removed_lines.add(attacked_line)
     line_to_remove = self._attacked_line_to_line_name(attacked_line)
+    self._sc_optimize(attacked_line)
     self.network.remove("Line",line_to_remove)
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
     return lopf_status
 
-  #Reward is -power not delivered
+  #Reward is power delivered
   def _calculate_reward(self,lopf_status):
     #If not feasible, return negative infinity and True
     if lopf_status[0] != 'ok':
       isFailure = True
-      reward =0
+      reward = -1000
     else:
-      reward = self.network.loads['p_set'].sum()
-      isFailure = False
+      reward = - (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p.loc['now'].sum()) #diff between inital generation and current generation
+      isFailure = False 
     return reward, isFailure
 
   def reset(self):
