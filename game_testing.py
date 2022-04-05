@@ -6,23 +6,35 @@ import numpy as np
 network = pypsa.Network('lopf_grid.nc')
 LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
-env = PowerGrid(network,attack_distribution)
+defend_distribution = np.random.dirichlet(np.ones(LINES),size= 1)[0]
+
+aEnv = PowerGrid(network,attack_distribution)
+dEnv = PowerGrid(network,defend_distribution)
+
 results_length= []
 results_rewards=[]
+
 for episode in range(5):
-  obs = env.reset()
-  total_reward = 0
+  obs = aEnv.reset()
+  dtrewards = 0
+  atrewards = 0
   for i in range(10):
-    env.render()
+    dEnv.render()
     action = np.random.choice(range(LINES))
-    obs, rewards, done, info = env.step(action)
-    total_reward += rewards
-    #env.render()
+    obs, rewards, done, info = aEnv.step(action)
+    dtrewards += rewards
+    
+    aEnv.render()
+    action = np.random.choice(range(LINES))
+    obs, rewards, done, info = aEnv.step(action)
+    atrewards += rewards
+
     if done==True:
       break
-  print(f"Agent made it {i+1} timesteps and had a total reward of {total_reward}")
+
+  print(f"Agent made it {i+1} timesteps and had a total reward of {dtrewards}")
   results_length.append(i)
-  results_rewards.append(total_reward)
+  results_rewards.append(dtrewards)
 print(results_length,np.mean(results_length))
 print(results_rewards,np.mean(results_rewards))
 
