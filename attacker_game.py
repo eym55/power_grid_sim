@@ -143,7 +143,7 @@ class PowerGrid(gym.Env):
     write_file.write(html_text)
     write_file.close()
 
-    del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-xaxis {display: none;}</style>"
+    del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-yaxis {display: none;}</style>"
     append_file.write(html_fig)
     append_file.write(del_axes_css)
     append_file.close()
