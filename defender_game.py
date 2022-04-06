@@ -77,16 +77,31 @@ class PowerGrid(gym.Env):
   def _attacked_line_to_line_name(self,attacked_line):
     return self.INITIAL_NETWORK.lines.index[attacked_line]
 
+  def _sc_optimize(self, removed_line_index):
+    now = self.network.snapshots[0]
+    line = self.network.lines.index[removed_line_index:removed_line_index + 1]
+    try:
+      sclopf_status = self.network.sclopf(now,branch_outages=line, solver_name='cbc')
+    except Exception as e:
+      print(e)
+      sclopf_status = ('Failure',None)
+
+    self.network.generators_t.p_set = self.network.generators_t.p_set.reindex(columns=self.network.generators.index)
+    self.network.generators_t.p_set.loc[now] = self.network.generators_t.p.loc[now]
+    return sclopf_status
+
   def _apply_attack(self,attacked_line):
     self.lines[attacked_line] = 0
     self.removed_lines.add(attacked_line)
     line_to_remove = self._attacked_line_to_line_name(attacked_line)
+
     affected_nodes = self.network.lines.loc[line_to_remove][['bus0','bus1']].values
     self.network.remove("Line",line_to_remove)
     try:
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
+
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
@@ -141,9 +156,9 @@ class PowerGrid(gym.Env):
     #If not feasible, return negative infinity and True
     if lopf_status[0] != 'ok':
       isFailure = True
-      reward =0
+      reward = 0
     else:
-      reward = self.network.loads['p_set'].sum()
+      reward = - (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p_set.loc['now'].sum()) #diff between inital (goal) generation and current generation
       isFailure = False
     return reward, isFailure
 
@@ -154,19 +169,35 @@ class PowerGrid(gym.Env):
     self.removed_lines = {None}
     self.current_step = 0
     return self.lines
+
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
     busValue = list(self.network.buses.index)
     color = self.network.buses_t.p.squeeze()
 
-    fig = plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(6, 3))
 
     data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
 
-
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
     fileName = "outputs/network" + str(self.current_step) + ".html" 
-    mpld3.plugins.connect(fig,busTooltip)
-    mpld3.save_html(fig, fileName)
+
+    mpld3.plugins.connect(fig, busTooltip)
+
+    html_fig = mpld3.fig_to_html(fig)
+
+    #Writes the info we want there, then appends the fig html
+    write_file = open(fileName, 'w')
+    append_file = open(fileName, 'a')
+
+    # TODO
+    # add more detail about visualization here
+    html_text = "<div><h1> This is Step: " + str(self.current_step) + " </h1></div>"
+
+    write_file.write(html_text)
+    write_file.close()
+
+    append_file.write(html_fig)
+    append_file.close()
     pass
