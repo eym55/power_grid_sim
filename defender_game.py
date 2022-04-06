@@ -125,7 +125,7 @@ class PowerGrid(gym.Env):
       except Exception as e:
         print(e)
         lopf_status = ('Failure',None)
-      return lopf_status, affected_nodes)
+      return lopf_status, affected_nodes
     if affected_nodes.any():
       affected_loads = self.network.loads['bus'].isin(affected_nodes)
       if not snom_to_load_ratios.loc[affected_loads].empty:
