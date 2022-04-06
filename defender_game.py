@@ -101,7 +101,6 @@ class PowerGrid(gym.Env):
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
-        print('Hello!', lopf_status)
 
     except Exception as e:
       print(e)
@@ -111,7 +110,6 @@ class PowerGrid(gym.Env):
   # Helper method to iterativly remove loads until network is feasible.
   # If no feasinle network can be found
   def _fix_infeasibility(self,affected_nodes):
-    print('Fixing Infeasible',affected_nodes)
     def snom_over_load(row):
       bus = row['bus']
       load = row['p_set']
@@ -127,12 +125,9 @@ class PowerGrid(gym.Env):
       except Exception as e:
         print(e)
         lopf_status = ('Failure',None)
-      return lopf_status, affected_nodes
-    print('Hello1')
+      return lopf_status, affected_nodes)
     if affected_nodes.any():
-      print('Hello')
       affected_loads = self.network.loads['bus'].isin(affected_nodes)
-      print('Hello2')
       if not snom_to_load_ratios.loc[affected_loads].empty:
         snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
       load_to_remove = snom_to_load_ratios.index[0]
