@@ -9,7 +9,7 @@ attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 env = PowerGrid(network,attack_distribution)
 results_length= []
 results_rewards=[]
-for episode in range(2):
+for episode in range(10):
   obs = env.reset()
   total_reward = 0
   for i in range(10):

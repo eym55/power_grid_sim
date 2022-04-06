@@ -102,15 +102,24 @@ class PowerGrid(gym.Env):
       load = row['p_set']
       return self.network.lines[(self.network.lines['bus0'] == bus) | (self.network.lines['bus1'] == bus)]['s_nom'].sum() / load
     snom_to_load_ratios = self.network.loads.apply(lambda x: snom_over_load(x),axis=1).sort_values(ascending = True)
+    #Remove any nodes that have cumulative s_nom < their load
+    if snom_to_load_ratios.iloc[0] < 1:
+      load_to_remove = snom_to_load_ratios.index[0]
+      affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
+      self.network.remove('Load',load_to_remove)
+      try:
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      except Exception as e:
+        print(e)
+        lopf_status = ('Failure',None)
+      return lopf_status, affected_nodes
     print('Hello1')
     if affected_nodes.any():
       print('Hello')
       affected_loads = self.network.loads['bus'].isin(affected_nodes)
       print('Hello2')
-      snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
-      print('Hello3')
-      print(affected_nodes)
-      print(snom_to_load_ratios)
+      if not snom_to_load_ratios.loc[affected_loads].empty:
+        snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
@@ -121,7 +130,6 @@ class PowerGrid(gym.Env):
         lopf_status = ('Failure',None)
       return lopf_status, affected_nodes
     else:
-      print('Hello4')
       load_to_remove = snom_to_load_ratios.index[0]
       self.network.remove('Load',load_to_remove)
       try:
