@@ -83,7 +83,9 @@ class PowerGrid(gym.Env):
     try:
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
     except Exception as e:
+      print("\n\n\n\n")
       print(e)
+      print("\n\n\n\n")
       lopf_status = ('Failure',None)
     return lopf_status
 
