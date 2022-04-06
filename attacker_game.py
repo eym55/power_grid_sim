@@ -127,6 +127,7 @@ class PowerGrid(gym.Env):
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
     fileName = "outputs/network" + str(self.current_step) + ".html"
+
     mpld3.plugins.connect(fig, busTooltip)
 
     html_fig = mpld3.fig_to_html(fig)
@@ -142,8 +143,8 @@ class PowerGrid(gym.Env):
     write_file.write(html_text)
     write_file.close()
 
+    del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-xaxis {display: none;}</style>"
     append_file.write(html_fig)
+    append_file.write(del_axes_css)
     append_file.close()
-
-    print("Here")
     pass
