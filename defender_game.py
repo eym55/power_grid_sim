@@ -106,9 +106,9 @@ class PowerGrid(gym.Env):
     #If not feasible, return negative infinity and True
     if lopf_status[0] != 'ok':
       isFailure = True
-      reward =0
+      reward = 0
     else:
-      reward = self.network.loads['p_set'].sum()
+      reward = - (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p_set.loc['now'].sum()) #diff between inital (goal) generation and current generation
       isFailure = False
     return reward, isFailure
 

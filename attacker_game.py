@@ -86,16 +86,16 @@ class PowerGrid(gym.Env):
       lopf_status = ('Failure',None)
     return lopf_status
 
-  #Reward is -power not delivered
+  #Reward is power not delivered
   def _calculate_reward(self,lopf_status):
-    #If not feasible, return positive infinity and True
+    #If not feasible, return positive 1000 and True
     if lopf_status[0] != 'ok':
       isFailure = True
-      reward = -np.inf
+      reward = np.inf
     else:
-      reward = self.network.loads['p_set'].sum()
+      reward = (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p.loc['now'].sum()) #diff between inital (goal) generation and current generation
       isFailure = False
-    return -reward, isFailure
+    return reward, isFailure
 
   """def choose_action(self):
     # choose an action randomly based on total q value proportion
