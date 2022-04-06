@@ -9,7 +9,7 @@ import numpy as np
 from collections import deque
 import random
 
-from game_env import PowerGrid
+from defender_game import PowerGrid
 import pypsa
 
 import warnings
