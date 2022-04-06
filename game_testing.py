@@ -8,7 +8,7 @@ LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 env = PowerGrid(network,attack_distribution)
 results_length= []
-results_rewards=[]
+results_rewards= []
 for episode in range(5):
   obs = env.reset()
   total_reward = 0
@@ -16,7 +16,7 @@ for episode in range(5):
     env.render()
     action = np.random.choice(range(LINES))
     obs, rewards, done, info = env.step(action)
-    total_reward += rewards
+    total_reward += int(rewards)
     #env.render()
     if done==True:
       break
