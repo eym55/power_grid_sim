@@ -7,12 +7,14 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import mpld3
+import re
 
 import warnings
 warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger()
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.WARNING)
+logging.getLogger("pypsa").setLevel(logging.WARNING)
 
 
 class PowerGrid(gym.Env):
@@ -92,14 +94,67 @@ class PowerGrid(gym.Env):
     self.lines[attacked_line] = 0
     self.removed_lines.add(attacked_line)
     line_to_remove = self._attacked_line_to_line_name(attacked_line)
-    self._sc_optimize(attacked_line)
+
+    affected_nodes = self.network.lines.loc[line_to_remove][['bus0','bus1']].values
     self.network.remove("Line",line_to_remove)
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='cbc')
+      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      while lopf_status[0] != 'ok':
+        lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
+        print('Hello!', lopf_status)
+
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
     return lopf_status
+
+  # Helper method to iterativly remove loads until network is feasible.
+  # If no feasinle network can be found
+  def _fix_infeasibility(self,affected_nodes):
+    print('Fixing Infeasible',affected_nodes)
+    def snom_over_load(row):
+      bus = row['bus']
+      load = row['p_set']
+      return self.network.lines[(self.network.lines['bus0'] == bus) | (self.network.lines['bus1'] == bus)]['s_nom'].sum() / load
+    snom_to_load_ratios = self.network.loads.apply(lambda x: snom_over_load(x),axis=1).sort_values(ascending = True)
+    #Remove any nodes that have cumulative s_nom < their load
+    if snom_to_load_ratios.iloc[0] < 1:
+      load_to_remove = snom_to_load_ratios.index[0]
+      affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
+      self.network.remove('Load',load_to_remove)
+      try:
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      except Exception as e:
+        print(e)
+        lopf_status = ('Failure',None)
+      return lopf_status, affected_nodes
+    print('Hello1')
+    if affected_nodes.any():
+      print('Hello')
+      affected_loads = self.network.loads['bus'].isin(affected_nodes)
+      print('Hello2')
+      if not snom_to_load_ratios.loc[affected_loads].empty:
+        snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
+      load_to_remove = snom_to_load_ratios.index[0]
+      affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
+      self.network.remove('Load',load_to_remove)
+      try:
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      except Exception as e:
+        print(e)
+        lopf_status = ('Failure',None)
+      return lopf_status, affected_nodes
+    else:
+      load_to_remove = snom_to_load_ratios.index[0]
+      self.network.remove('Load',load_to_remove)
+      try:
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      except Exception as e:
+        print(e)
+        lopf_status = ('Failure',None)
+      return lopf_status, np.array([])
+    
+
 
   #Reward is -power not delivered
   def _calculate_reward(self,lopf_status):
@@ -132,6 +187,7 @@ class PowerGrid(gym.Env):
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
     fileName = "outputs/network" + str(self.current_step) + ".html" 
+
     mpld3.plugins.connect(fig, busTooltip)
 
     html_fig = mpld3.fig_to_html(fig)
@@ -149,6 +205,4 @@ class PowerGrid(gym.Env):
 
     append_file.write(html_fig)
     append_file.close()
-
-    print("Here")
     pass
