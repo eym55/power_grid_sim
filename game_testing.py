@@ -10,16 +10,17 @@ env = PowerGrid(network,attack_distribution)
 results_length= []
 
 results_rewards=[]
-for episode in range(10):
+for episode in range(1):
   obs = env.reset()
   total_reward = 0
-  for i in range(10):
+  done = False
+  i=0
+  while done == False:
     env.render()
     action = np.random.choice(range(LINES))
     obs, rewards, done, info = env.step(action)
+    i+=1
     total_reward += rewards
-    if done==True:
-      break
   print(f"Agent made it {i+1} timesteps and had a total reward of {total_reward}")
   results_length.append(i)
   results_rewards.append(total_reward)

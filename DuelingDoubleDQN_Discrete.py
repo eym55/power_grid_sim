@@ -61,12 +61,12 @@ class ActionStateModel:
     def create_model(self):
         backbone = tf.keras.Sequential([
             Input((self.state_dim,)),
-            Dense(32, activation='relu'),
-            Dense(16, activation='relu')
+            Dense(64, activation='relu'),
+            Dense(32, activation='relu')
         ])
         state_input = Input((self.state_dim,))
-        backbone_1 = Dense(32, activation='relu')(state_input)
-        backbone_2 = Dense(16, activation='relu')(backbone_1)
+        backbone_1 = Dense(64, activation='relu')(state_input)
+        backbone_2 = Dense(32, activation='relu')(backbone_1)
         value_output = Dense(1)(backbone_2)
         advantage_output = Dense(self.action_dim)(backbone_2)
         output = Add()([value_output, advantage_output])
@@ -115,9 +115,10 @@ class Agent:
             self.model.train(states, targets)
     
     def train(self, max_episodes=1000):
-        rewards = []
+        history = {'rewards':[],'timesteps':[]}
         for ep in range(max_episodes):
             done, total_reward = False, 0
+            timestep = 0
             state = self.env.reset()
             while not done:
                 action = self.model.get_action(state)
@@ -125,13 +126,15 @@ class Agent:
                 self.buffer.put(state, action, reward*0.01, next_state, done)
                 total_reward += reward
                 state = next_state
+                timestep +=1
             
             if self.buffer.size() >= args.batch_size:
                 self.replay()                
             self.target_update()
-            rewards.append(total_reward)
-            print('EP{} EpisodeReward={}'.format(ep, total_reward))
-        return rewards
+            history['rewards'].append(total_reward)
+            history['timesteps'].append(timestep)
+            print('\n\n\nEP{} EpisodeReward={}\n\n\n'.format(ep, total_reward))
+        return history
             # wandb.log({'Reward': total_reward})
       
     def get_q_values(self,state):
@@ -142,19 +145,20 @@ class Agent:
 
 
 def main():
+    NUM_EPISODES = 5000
     warnings.filterwarnings("ignore")
     logger = logging.getLogger()
     logger.setLevel(logging.CRITICAL)
     network = pypsa.Network('lopf_grid.nc')
     LINES = network.lines.shape[0]
+    np.random.seed(0)
     attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
     env = PowerGrid(network,attack_distribution)
     agent = Agent(env)
-    history = agent.train(max_episodes=1000)
+    history = agent.train(max_episodes=NUM_EPISODES)
+    history['q_values'] = agent.get_q_values(env.reset())
     with open('parrot.pkl', 'wb') as f:
         pickle.dump(history, f)
-    plt.plot(range(1000),history)
-    plt.show()
 
 
 if __name__ == "__main__":

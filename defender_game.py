@@ -13,8 +13,8 @@ import warnings
 warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger()
-logger.setLevel(logging.WARNING)
-logging.getLogger("pypsa").setLevel(logging.WARNING)
+logger.setLevel(logging.CRITICAL)
+logging.getLogger("pypsa").setLevel(logging.CRITICAL)
 
 
 class PowerGrid(gym.Env):
@@ -83,7 +83,6 @@ class PowerGrid(gym.Env):
     try:
       sclopf_status = self.network.sclopf(now,branch_outages=line, solver_name='cbc')
     except Exception as e:
-      print(e)
       sclopf_status = ('Failure',None)
 
     self.network.generators_t.p_set = self.network.generators_t.p_set.reindex(columns=self.network.generators.index)
@@ -98,12 +97,11 @@ class PowerGrid(gym.Env):
     affected_nodes = self.network.lines.loc[line_to_remove][['bus0','bus1']].values
     self.network.remove("Line",line_to_remove)
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
 
     except Exception as e:
-      print(e)
       lopf_status = ('Failure',None)
     return lopf_status
 
@@ -121,11 +119,10 @@ class PowerGrid(gym.Env):
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
       except Exception as e:
-        print(e)
         lopf_status = ('Failure',None)
-      return lopf_status, affected_nodes)
+      return lopf_status, affected_nodes
     if affected_nodes.any():
       affected_loads = self.network.loads['bus'].isin(affected_nodes)
       if not snom_to_load_ratios.loc[affected_loads].empty:
@@ -134,18 +131,16 @@ class PowerGrid(gym.Env):
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
       except Exception as e:
-        print(e)
         lopf_status = ('Failure',None)
       return lopf_status, affected_nodes
     else:
       load_to_remove = snom_to_load_ratios.index[0]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
       except Exception as e:
-        print(e)
         lopf_status = ('Failure',None)
       return lopf_status, np.array([])
     
@@ -158,7 +153,7 @@ class PowerGrid(gym.Env):
       isFailure = True
       reward = 0
     else:
-      reward = - (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p_set.loc['now'].sum()) #diff between inital (goal) generation and current generation
+      reward = self.network.loads.p_set.sum()
       isFailure = False
     return reward, isFailure
 
