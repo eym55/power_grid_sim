@@ -5,6 +5,8 @@ import pypsa
 import numpy as np
 from ray.tune.registry import register_env
 import pickle
+import resource
+resource.getrlimit(resource.RLIMIT_NOFILE)
 
 
 ray.init()
@@ -13,13 +15,14 @@ LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 agent = ppo.PPOTrainer(env=PowerGrid, config={
     "env_config": {'network':network,'attack_distribution':attack_distribution}, 
-    "num_workers": 2,
+    "num_workers": 0,
     "vf_clip_param": 100,
 })
 history = []
-for _ in range(5):
+for _ in range(1):
   try:
-    history.append(agent.train())
+    pop = agent.train()
+    history.append(pop)
   except Exception as e:
     print(e)
     print("FUCK")
