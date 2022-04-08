@@ -4,6 +4,7 @@ from defender_game import PowerGrid
 import pypsa
 import numpy as np
 from ray.tune.registry import register_env
+import pickle
 
 
 ray.init()
@@ -14,7 +15,11 @@ agent = ppo.PPOTrainer(env=PowerGrid, config={
     "env_config": {'network':network,'attack_distribution':attack_distribution}, 
     "evaluation_num_workers": 1,
 })
-for _ in range(1):
-  results = agent.train()
-print(results)
-agent.evaluate()
+history = []
+for _ in range(5):
+  try:
+    history.append(agent.train())
+  except:
+    print("FUCK")
+with open('history.pkl', 'wb') as f:
+  pickle.dump(history, f)
