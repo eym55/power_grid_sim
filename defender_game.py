@@ -28,7 +28,7 @@ class PowerGrid(gym.Env):
     attack_distribution = env_config['attack_distribution']
     timesteps = 15
     #Keep track of timesteps and horizen
-    self.timesteps = timesteps
+    self.timesteps = timesteps 
     self.current_step = 0
 
     #Stor network and initial for reset
@@ -173,32 +173,33 @@ class PowerGrid(gym.Env):
 
   #TODO add rendering here
   def render(self, mode='human', close=False):
-    # Render the environment to the screen
-    busValue = list(self.network.buses.index)
-    color = self.network.buses_t.p.squeeze()
+    # # Render the environment to the screen
+    # busValue = list(self.network.buses.index)
+    # color = self.network.buses_t.p.squeeze()
 
-    fig = plt.figure(figsize=(6, 3))
+    # fig = plt.figure(figsize=(6, 3))
 
-    data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
+    # data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
 
-    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
-    fileName = "outputs/network" + str(self.current_step) + ".html" 
+    # busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
+    # fileName = "outputs/network" + str(self.current_step) + ".html" 
 
-    mpld3.plugins.connect(fig, busTooltip)
+    # mpld3.plugins.connect(fig, busTooltip)
 
-    html_fig = mpld3.fig_to_html(fig)
+    # html_fig = mpld3.fig_to_html(fig)
 
-    #Writes the info we want there, then appends the fig html
-    write_file = open(fileName, 'w')
-    append_file = open(fileName, 'a')
+    # #Writes the info we want there, then appends the fig html
+    # write_file = open(fileName, 'w')
+    # append_file = open(fileName, 'a')
 
-    # TODO
-    # add more detail about visualization here
-    html_text = "<div><h1> This is Step: " + str(self.current_step) + " </h1></div>"
+    # # TODO
+    # # add more detail about visualization here
+    # html_text = "<div><h1> This is Step: " + str(self.current_step) + " </h1></div>"
 
-    write_file.write(html_text)
-    write_file.close()
+    # write_file.write(html_text)
+    # write_file.close()
 
-    append_file.write(html_fig)
-    append_file.close()
+    # append_file.write(html_fig)
+    # append_file.close()
+    
     pass

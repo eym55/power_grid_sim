@@ -13,7 +13,8 @@ LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 agent = ppo.PPOTrainer(env=PowerGrid, config={
     "env_config": {'network':network,'attack_distribution':attack_distribution}, 
-    "num_workers": 1,
+    "num_workers": 2,
+    "vf_clip_param": 100,
 })
 history = []
 for _ in range(5):
