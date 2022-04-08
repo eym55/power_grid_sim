@@ -15,7 +15,7 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 logging.getLogger("pypsa").setLevel(logging.CRITICAL)
-
+np.random.seed(10)
 
 class PowerGrid(gym.Env):
 
@@ -33,7 +33,8 @@ class PowerGrid(gym.Env):
 
     #Stor network and initial for reset
     self.INITIAL_NETWORK = network
-    self.network = copy.deepcopy(network)
+    self.network = self.INITIAL_NETWORK.copy()
+
 
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
@@ -103,10 +104,11 @@ class PowerGrid(gym.Env):
     affected_nodes = self.network.lines.loc[line_to_remove][['bus0','bus1']].values
     self.network.remove("Line",line_to_remove)
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
+      lopf_status = self._call_lopf()
+      if lopf_status[0] == 'Failure':
+        raise(Exception)
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
-
     except Exception as e:
       lopf_status = ('Failure',None)
     return lopf_status
@@ -124,10 +126,7 @@ class PowerGrid(gym.Env):
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
-      try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
-      except Exception as e:
-        lopf_status = ('Failure',None)
+      lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
     if affected_nodes.any():
       affected_loads = self.network.loads['bus'].isin(affected_nodes)
@@ -136,21 +135,21 @@ class PowerGrid(gym.Env):
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
-      try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
-      except Exception as e:
-        lopf_status = ('Failure',None)
+      lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
     else:
       load_to_remove = snom_to_load_ratios.index[0]
       self.network.remove('Load',load_to_remove)
-      try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LogToConsole':0},solver_logfile='')
-      except Exception as e:
-        lopf_status = ('Failure',None)
+      lopf_status = self._call_lopf()
       return lopf_status, np.array([])
     
-
+  def _call_lopf(self):
+    try:
+      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0},solver_logfile=None,store_basis = False,warmstart = False)
+    except Exception as e:
+      print(e)
+      lopf_status = ('Failure',None)
+    return lopf_status
 
   #Reward is -power not delivered
   def _calculate_reward(self,lopf_status):
@@ -165,7 +164,8 @@ class PowerGrid(gym.Env):
 
   def reset(self):
     # Reset the state of the environment to an initial state
-    self.network = copy.deepcopy(self.INITIAL_NETWORK)
+    self.network.lines = self.INITIAL_NETWORK.lines.copy()
+    self.network.loads = self.INITIAL_NETWORK.loads.copy()
     self.lines = np.ones(self.NUM_LINES,dtype=np.int8)
     self.removed_lines = {None}
     self.current_step = 0
