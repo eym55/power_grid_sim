@@ -22,14 +22,17 @@ agent = dqn.DQNTrainer(env=PowerGrid, config={
     "v_min": 0,
     "v_max": 500.0
 })
-history = []
-for i in range(5):
+histories = []
+for i in range(10):
   try:
     pop = agent.train()
-    history.append(pop)
+    histories.append(pop['hist_stats'])
+    print(pop)
   except Exception as e:
     print(e)
     print("FUCK")
     print(i)
+
+print(histories)
 with open('history.pkl', 'wb') as f:
-  pickle.dump(history, f)
+  pickle.dump(histories, f)
