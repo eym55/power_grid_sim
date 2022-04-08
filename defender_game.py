@@ -22,8 +22,11 @@ class PowerGrid(gym.Env):
   """Custom Environment that follows gym interface"""
   metadata = {'render.modes': ['human']}
 
-  def __init__(self, network: Network, attack_distribution,timesteps = 10):
+  def __init__(self, env_config):
     super(PowerGrid, self).__init__()
+    network = env_config['network']
+    attack_distribution = env_config['attack_distribution']
+    timesteps = 15
     #Keep track of timesteps and horizen
     self.timesteps = timesteps
     self.current_step = 0
@@ -66,12 +69,15 @@ class PowerGrid(gym.Env):
     #Check if network has no lines
     if self.network.lines.shape[0] == 0:
       done = True
+    #Check if loads are all 0
+    if reward == 0:
+      done = True
     #Check if horizon reached
     if self.current_step == self.timesteps:
       done = True
     
-    observation = self.lines
     
+    observation = self.lines
     return  observation, reward, done, {}
 
   def _attacked_line_to_line_name(self,attacked_line):
