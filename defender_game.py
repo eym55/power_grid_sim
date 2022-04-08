@@ -8,7 +8,7 @@ import random
 import matplotlib.pyplot as plt
 import mpld3
 import re
-
+import copy
 import warnings
 warnings.filterwarnings("ignore")
 import logging
@@ -33,7 +33,7 @@ class PowerGrid(gym.Env):
 
     #Stor network and initial for reset
     self.INITIAL_NETWORK = network
-    self.network = network.copy()
+    self.network = copy.deepcopy(network)
 
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
@@ -165,7 +165,7 @@ class PowerGrid(gym.Env):
 
   def reset(self):
     # Reset the state of the environment to an initial state
-    self.network = self.INITIAL_NETWORK.copy()
+    self.network = copy.deepcopy(self.INITIAL_NETWORK)
     self.lines = np.ones(self.NUM_LINES,dtype=np.int8)
     self.removed_lines = {None}
     self.current_step = 0
@@ -201,5 +201,5 @@ class PowerGrid(gym.Env):
 
     # append_file.write(html_fig)
     # append_file.close()
-    
+
     pass
