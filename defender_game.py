@@ -1,4 +1,3 @@
-
 import gym
 from gym import spaces
 from pypsa import Network
@@ -32,24 +31,24 @@ class PowerGrid(gym.Env):
     self.current_step = 0
 
     #Stor network and initial for reset
-    self.INITIAL_NETWORK = network
-    self.network = self.INITIAL_NETWORK.copy()
+    self.network = network
+    self.initial_lines = network.lines.copy()
+    self.initial_loads = network.loads.copy()
 
 
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
 
-    self.NUM_LINES = self.INITIAL_NETWORK.lines.shape[0]
+    self.NUM_LINES = self.initial_lines.shape[0]
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
     # Actions are defend line, each action correspoonds to the index of the line to defend.
     self.action_space = spaces.Discrete(network.lines.shape[0])
     #Observations are just lines whether they are up or down. 
-    low = np.zeros(self.NUM_LINES,dtype = np.int8)
-    high = np.ones(self.NUM_LINES,dtype = np.int8)
-    self.observation_space = spaces.Box(low, high, dtype=np.int8)
-
+    lines_obs_space = spaces.Box(np.zeros(self.NUM_LINES,dtype = np.int8), np.ones(self.NUM_LINES,dtype = np.int8), dtype=np.int8)
+    loads_obs_space = spaces.Box(np.zeros(self.network.loads.shape[0],dtype = np.int8), np.full(self.network.loads.shape[0],self.network.loads['p_set'].max()), dtype=np.int8)
+    self.observation_space = spaces.Dict({"lines": lines_obs_space, "loads":loads_obs_space})
   def step(self, action):
     done = False
     #Sample from attack distribution until we get a line thats not removed
@@ -78,11 +77,11 @@ class PowerGrid(gym.Env):
       done = True
     
     
-    observation = self.lines
+    observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
     return  observation, reward, done, {}
 
   def _attacked_line_to_line_name(self,attacked_line):
-    return self.INITIAL_NETWORK.lines.index[attacked_line]
+    return self.initial_lines.index[attacked_line]
 
   def _sc_optimize(self, removed_line_index):
     now = self.network.snapshots[0]
@@ -120,12 +119,12 @@ class PowerGrid(gym.Env):
       bus = row['bus']
       load = row['p_set']
       return self.network.lines[(self.network.lines['bus0'] == bus) | (self.network.lines['bus1'] == bus)]['s_nom'].sum() / load
-    snom_to_load_ratios = self.network.loads.apply(lambda x: snom_over_load(x),axis=1).sort_values(ascending = True)
+    snom_to_load_ratios = self.network.loads[self.network.loads != 0].apply(lambda x: snom_over_load(x),axis=1).sort_values(ascending = True)
     #Remove any nodes that have cumulative s_nom < their load
     if snom_to_load_ratios.iloc[0] < 1:
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
-      self.network.remove('Load',load_to_remove)
+      self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
     if affected_nodes.any():
@@ -134,12 +133,12 @@ class PowerGrid(gym.Env):
         snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
-      self.network.remove('Load',load_to_remove)
+      self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
     else:
       load_to_remove = snom_to_load_ratios.index[0]
-      self.network.remove('Load',load_to_remove)
+      self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, np.array([])
     
@@ -164,12 +163,13 @@ class PowerGrid(gym.Env):
 
   def reset(self):
     # Reset the state of the environment to an initial state
-    self.network.lines = self.INITIAL_NETWORK.lines.copy()
-    self.network.loads = self.INITIAL_NETWORK.loads.copy()
+    self.network.lines = self.initial_lines.copy()
+    self.network.loads = self.initial_loads.copy()
     self.lines = np.ones(self.NUM_LINES,dtype=np.int8)
     self.removed_lines = {None}
     self.current_step = 0
-    return self.lines
+    observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
+    return observation
 
   #TODO add rendering here
   def render(self, mode='human', close=False):
