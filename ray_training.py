@@ -23,7 +23,6 @@ agent = dqn.DQNTrainer(env=PowerGrid, config={
     "num_atoms": 5,
     "v_min": 0,
     "v_max": 10.0,
-    'num_gpus': 1
 })
 histories = []
 #Change the range to desired amount of training iterations
