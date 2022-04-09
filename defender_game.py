@@ -144,8 +144,8 @@ class PowerGrid(gym.Env):
     
   def _call_lopf(self):
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'LicenseID':'791591','TokenServer':''},solver_logfile=None,store_basis = False,warmstart = False)
-
+      lopf_status = self.network.lopf(pyomo=False,solver_name='glpk',solver_logfile=None,store_basis = False,warmstart = False)
+      # solver_options = {'OutputFlag': 0,'LicenseID':'791591','TokenServer':''}
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
