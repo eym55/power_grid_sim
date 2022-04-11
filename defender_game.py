@@ -124,6 +124,7 @@ class PowerGrid(gym.Env):
     if snom_to_load_ratios.iloc[0] < 1:
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
+
       self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
@@ -173,33 +174,39 @@ class PowerGrid(gym.Env):
 
   #TODO add rendering here
   def render(self, mode='human', close=False):
-    # # Render the environment to the screen
-    # busValue = list(self.network.buses.index)
-    # color = self.network.buses_t.p.squeeze()
+    # Render the environment to the screen
+    busValue = list(self.network.buses.index)
+    color = self.network.buses_t.p.squeeze()
 
-    # fig = plt.figure(figsize=(6, 3))
+    fig = plt.figure(figsize=(6, 3))
 
-    # data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
+    data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
 
-    # busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
-    # fileName = "outputs/network" + str(self.current_step) + ".html" 
+    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
+    fileName = "outputs/network" + str(self.current_step) + ".html" 
 
-    # mpld3.plugins.connect(fig, busTooltip)
+    mpld3.plugins.connect(fig, busTooltip)
 
-    # html_fig = mpld3.fig_to_html(fig)
+    html_fig = mpld3.fig_to_html(fig)
 
-    # #Writes the info we want there, then appends the fig html
-    # write_file = open(fileName, 'w')
-    # append_file = open(fileName, 'a')
+    #Writes the info we want there, then appends the fig html
+    write_file = open(fileName, 'w')
+    append_file = open(fileName, 'a')
 
-    # # TODO
-    # # add more detail about visualization here
-    # html_text = "<div><h1> This is Step: " + str(self.current_step) + " </h1></div>"
+    # TODO
+    # add more detail about visualization here
+    html_text = "<div><h1> This is Step: " + str(self.current_step) + " </h1></div>"
 
-    # write_file.write(html_text)
-    # write_file.close()
+    write_file.write(html_text)
+    write_file.close()
 
-    # append_file.write(html_fig)
-    # append_file.close()
+    append_file.write(html_fig)
+    append_file.close()
 
+
+    del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-yaxis {display: none;}</style>"
+    append_file.write(html_fig)
+    append_file.write(del_axes_css)
+    append_file.close()
     pass
+
