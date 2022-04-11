@@ -2,13 +2,17 @@ import gym
 from defender_game import PowerGrid
 import pypsa
 import numpy as np
+from agents import RandomAgent,DQNAgent
 
-np.random.seed(0)
 network = pypsa.Network('lopf_grid.nc')
-LINES = network.lines.shape[0]
-attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
-
-env = PowerGrid({'network':network,'attack_distribution':attack_distribution})
+defender = RandomAgent()
+agent_config = {
+  'attack_distribution = '
+}
+env_config = {
+  'network':network,
+  'agent_config':attack_distribution}
+env = PowerGrid()
 results_length= []
 results_rewards=[]
 for episode in range(5):
