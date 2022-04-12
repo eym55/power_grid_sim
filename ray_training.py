@@ -27,7 +27,7 @@ env_config = {
 
 agent = dqn.DQNTrainer(env=PowerGrid, config={
     "env_config": env_config, 
-    "num_workers": 1,
+    "num_workers": 8,
     "n_step": 5,
     "noisy": True,
     "num_atoms": 5,
@@ -36,11 +36,11 @@ agent = dqn.DQNTrainer(env=PowerGrid, config={
 })
 
 #Change the range to desired amount of training iterations
-for i in range(2):
+for i in range(300):
   try:
     pop = agent.train()
     print(pretty_print(pop))
-    time.sleep(25)
+    time.sleep(5)
     if i % 10 == 0:
        checkpoint = agent.save()
        print("checkpoint saved at", checkpoint)
