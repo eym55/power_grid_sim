@@ -1,4 +1,5 @@
 from asyncio import current_task
+from pickletools import stringnl
 import gym
 from gym import spaces
 from pypsa import Network
@@ -20,7 +21,6 @@ class Agent():
 class RandomAgent(Agent):
   def __init__(self,game_env,agent_config):
     self.game_env = game_env
-    print(agent_config)
     #currently only handles discrete
     self.action_space = self.game_env.action_space
     self.action_distribution = agent_config['action_distribution']
@@ -48,3 +48,4 @@ class DQNAgent(Agent):
   def compute_action(self,state):
     action = self.agent.compute_action(state)
     return action
+
