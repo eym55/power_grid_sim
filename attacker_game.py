@@ -82,7 +82,9 @@ class PowerGrid(gym.Env):
     try:
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
     except Exception as e:
+      print("\n\n\n\n")
       print(e)
+      print("\n\n\n\n")
       lopf_status = ('Failure',None)
     return lopf_status
 
@@ -129,7 +131,7 @@ class PowerGrid(gym.Env):
     fileName = "outputs/network" + str(self.current_step) + ".html"
 
     mpld3.plugins.connect(fig, busTooltip)
-
+    '''
     html_fig = mpld3.fig_to_html(fig)
 
     #Writes the info we want there, then appends the fig html
@@ -147,4 +149,5 @@ class PowerGrid(gym.Env):
     append_file.write(html_fig)
     append_file.write(del_axes_css)
     append_file.close()
+    '''
     pass

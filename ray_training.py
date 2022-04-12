@@ -1,0 +1,45 @@
+import gym, ray
+#Import any agents you want to train, list found here: https://docs.ray.io/en/latest/rllib/rllib-algorithms.html
+from ray.rllib.agents import ppo,dqn,a3c
+from defender_game import PowerGrid
+import pypsa
+import numpy as np
+from ray.tune.registry import register_env
+import pickle
+import time
+from ray.tune.logger import pretty_print
+
+ray.init()
+network = pypsa.Network('lopf_grid.nc')
+LINES = network.lines.shape[0]
+attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
+#Change dqn to the desired algorithm
+#Change any config variables other than env_config
+agent = dqn.DQNTrainer(env=PowerGrid, config={
+    "env_config": {'network':network,'attack_distribution':attack_distribution}, 
+    "num_workers": 8,
+    "n_step": 5,
+    "noisy": True,
+    "num_atoms": 5,
+    "v_min": 0,
+    "v_max": 10.0,
+})
+histories = []
+#Change the range to desired amount of training iterations
+for i in range(200):
+  try:
+    pop = agent.train()
+    histories.append(pop['hist_stats'])
+    print(pretty_print(pop))
+    time.sleep(10)
+    if i % 10 == 0:
+       checkpoint = agent.save()
+       print("checkpoint saved at", checkpoint)
+  except Exception as e:
+    print(e)
+    print("FUCK")
+    print(i)
+
+print(histories)
+with open('history_100.pkl', 'wb') as f:
+  pickle.dump(histories, f)
