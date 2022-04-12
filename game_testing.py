@@ -3,6 +3,7 @@ from defender_game import PowerGrid
 import pypsa
 import numpy as np
 from agents import RandomAgent,DQNAgent
+from old_defender_game import OldPowerGrid
 
 network = pypsa.Network('lopf_grid.nc')
 LINES = network.lines.shape[0]
@@ -28,10 +29,9 @@ defend_config = {
     "num_atoms": 2,
     "v_min": 0,
     "v_max": 1000.0,
-},
-
+    }
 }
-defender = DQNAgent(env,defend_config)
+defender = DQNAgent(OldPowerGrid,defend_config)
 
 results_length= []
 results_rewards=[]

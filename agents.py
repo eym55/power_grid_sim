@@ -43,7 +43,7 @@ class DQNAgent(Agent):
     self.action_space = self.game_env.action_space
     self.checkpoint_path = agent_config['checkpoint_path']
     self.agent_config = agent_config['agent_config']
-    self.agent = dqn.DQNTrainere(env = self.game_env,config = agent_config)
+    self.agent = dqn.DQNTrainer(env = self.game_env,config = self.agent_config)
     self.agent.load_checkpoint(self.checkpoint_path)
   def compute_action(self,state):
     action = self.agent.compute_action(state)

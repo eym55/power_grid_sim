@@ -77,7 +77,6 @@ class PowerGrid(gym.Env):
     if self.current_step == self.timesteps:
       done = True
     
-    
     observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
     return  observation, reward, done, {}
 
@@ -145,7 +144,7 @@ class PowerGrid(gym.Env):
     
   def _call_lopf(self):
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0},solver_logfile=None,store_basis = False,warmstart = False)      # solver_options = {'OutputFlag': 0,'LicenseID':'791591','TokenServer':''}
+      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0},solver_logfile=None,store_basis = False,warmstart = False) 
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
