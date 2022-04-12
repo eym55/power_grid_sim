@@ -124,7 +124,6 @@ class PowerGrid(gym.Env):
     if snom_to_load_ratios.iloc[0] < 1:
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
-
       self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
@@ -175,14 +174,32 @@ class PowerGrid(gym.Env):
   #TODO add rendering here
   def render(self, mode='human', close=False):
     # Render the environment to the screen
-    busValue = list(self.network.buses.index)
-    color = self.network.buses_t.p.squeeze()
+    busValue1 = list(self.network.buses.index)
+    print(busValue1[0])
+    busValue2 = list(self.network.buses_t.p.squeeze())
+    #tuple_busValues = map(lambda x,y:(x,y), busValue1, busValue2)
+
+    #Add more necessary values here
+    tup = []
+    max_length = max(len(busValue1), len(busValue2))
+    for i in range(max_length):
+      str_p_squeeze = " pSqueeze = " + str(busValue2[i])
+      tup.append([busValue1[i], str_p_squeeze])
+
+
+    bus_color = self.network.buses_t.p.squeeze()
+    #TODO
+    #line_colors = self.lines.r
+
+    #Add Legend
+    #Add Snom interaction
+    #
 
     fig = plt.figure(figsize=(6, 3))
 
-    data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .01)
+    data = self.network.plot(bus_colors=bus_color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .01)
 
-    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
+    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], tup,0,0,-50)
     fileName = "outputs/network" + str(self.current_step) + ".html" 
 
     mpld3.plugins.connect(fig, busTooltip)
@@ -197,11 +214,11 @@ class PowerGrid(gym.Env):
     # add more detail about visualization here
     # Write template html file, so some of these vars can be erased.
 
+    update_text = "<p1>Viz Update: Added pSqueeze values to buses.</p1>"
+    html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1></div>"
 
-
-    html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step) + " </h1></div>"
-
-    write_file.write(html_text)
+    total_beg_text = update_text + html_text
+    write_file.write(total_beg_text)
     write_file.close()
 
     append_file.write(html_fig)
