@@ -131,7 +131,7 @@ class PowerGrid(gym.Env):
     fileName = "outputs/network" + str(self.current_step) + ".html"
 
     mpld3.plugins.connect(fig, busTooltip)
-
+    '''
     html_fig = mpld3.fig_to_html(fig)
 
     #Writes the info we want there, then appends the fig html
@@ -149,4 +149,5 @@ class PowerGrid(gym.Env):
     append_file.write(html_fig)
     append_file.write(del_axes_css)
     append_file.close()
+    '''
     pass

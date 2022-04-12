@@ -4,7 +4,13 @@ import pypsa
 import numpy as np
 
 np.random.seed(0)
-network = pypsa.Network('lopf_grid.nc')
+
+grid = 'lopf_grid.nc'
+is_testing = True
+if not is_testing:
+  grid = 'FinalTexasGrid.nc'
+network = pypsa.Network(grid)
+
 LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 
