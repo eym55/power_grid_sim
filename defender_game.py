@@ -171,33 +171,52 @@ class PowerGrid(gym.Env):
     observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
     return observation
 
-  #TODO add rendering here
+  # TODO
+
+  # Add Legend - in progress
+  # Add Snom interaction w/ lines - added
+  # Normalize/change pSqueeze Values so Viz looks better
+  # Give context of what the agents are doing (text of what happened, reward amt etc.)
+  #
+
   def render(self, mode='human', close=False):
     # Render the environment to the screen
-    busValue1 = list(self.network.buses.index)
-    print(busValue1[0])
-    busValue2 = list(self.network.buses_t.p.squeeze())
-    #tuple_busValues = map(lambda x,y:(x,y), busValue1, busValue2)
+
+    #Reduces bus_num for vis purposes.
+    #Working on better solution
+    def rename_bus_num(ls_bus_nums, reduce_num):
+      new_ls = []
+      for i in range(len(ls_bus_nums)):
+        int_bus_num = int(ls_bus_nums[i][4:])
+        #new_num = int_bus_num - reduce_num
+        new_ls.append("Bus " + str(i+1))
+      return new_ls
+
+    bus_num = list(self.network.buses.index)
+
+    new_bus_num = rename_bus_num(bus_num, 300000)
+    bus_p_squeeze = list(self.network.buses_t.p.squeeze())
 
     #Add more necessary values here
     tup = []
-    max_length = max(len(busValue1), len(busValue2))
+    max_length = max(len(new_bus_num), len(bus_p_squeeze))
     for i in range(max_length):
-      str_p_squeeze = " pSqueeze = " + str(busValue2[i])
-      tup.append([busValue1[i], str_p_squeeze])
+      str_p_squeeze = " pSqueeze = " + str(bus_p_squeeze[i])
+      tup.append([new_bus_num[i], str_p_squeeze])
 
 
     bus_color = self.network.buses_t.p.squeeze()
-    #TODO
-    #line_colors = self.lines.r
 
-    #Add Legend
-    #Add Snom interaction
-    #
+
+
+    #print(self.network.lines.describe())
+    #print(self.network.buses.index)
+    line_color = self.network.lines.s_nom
+
 
     fig = plt.figure(figsize=(6, 3))
 
-    data = self.network.plot(bus_colors=bus_color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .01)
+    data = self.network.plot(bus_colors=bus_color, bus_cmap=plt.cm.RdYlGn, line_colors=line_color, line_widths = 5.0, bus_sizes = .005)
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], tup,0,0,-50)
     fileName = "outputs/network" + str(self.current_step) + ".html" 
@@ -214,19 +233,22 @@ class PowerGrid(gym.Env):
     # add more detail about visualization here
     # Write template html file, so some of these vars can be erased.
 
-    update_text = "<p1>Viz Update: Added pSqueeze values to buses.</p1>"
+
     html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1></div>"
 
-    total_beg_text = update_text + html_text
-    write_file.write(total_beg_text)
+    #total_beg_text = update_text + html_text
+    write_file.write(html_text)
     write_file.close()
 
     append_file.write(html_fig)
 
     center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center }}</style>'''
 
+    legend_html = "<ul class=\"charts-css legend legend-circle\" float: right;><li> Label 1 </li><li> Label 2 </li><li> Label 3 </li></ul>"
     del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-yaxis {display: none;}</style>"
-    total_css = center_fig_html + del_axes_css
+
+
+    total_css = center_fig_html + legend_html + del_axes_css
     append_file.write(total_css)
     append_file.close()
     pass
