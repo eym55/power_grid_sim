@@ -180,14 +180,14 @@ class PowerGrid(gym.Env):
 
     fig = plt.figure(figsize=(6, 3))
 
-    data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .1)
+    data = self.network.plot(bus_colors=color, bus_cmap=plt.cm.RdYlGn, line_widths = 5.0, bus_sizes = .005)
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], busValue,0,0,-50)
     fileName = "outputs/network" + str(self.current_step) + ".html" 
 
     mpld3.plugins.connect(fig, busTooltip)
 
-    html_fig = mpld3.fig_to_html(fig)
+    html_fig = mpld3.fig_to_html(fig, figid='fig1')
 
     #Writes the info we want there, then appends the fig html
     write_file = open(fileName, 'w')
@@ -195,7 +195,11 @@ class PowerGrid(gym.Env):
 
     # TODO
     # add more detail about visualization here
-    html_text = "<div><h1> This is Step: " + str(self.current_step) + " </h1></div>"
+    # Write template html file, so some of these vars can be erased.
+
+    #center_fig_html = "<style type=\"text/css\">div#fig1 {{ text-align: center }}</style>"
+
+    html_text = "<div { text-align: center; }><h1> This is Step: " + str(self.current_step) + " </h1></div>"
 
     write_file.write(html_text)
     write_file.close()
@@ -204,6 +208,7 @@ class PowerGrid(gym.Env):
 
 
     del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-yaxis {display: none;}</style>"
+    #total_css = center_fig_html + del_axes_css
     append_file.write(del_axes_css)
     append_file.close()
     pass
