@@ -33,7 +33,7 @@ initial_state = env.reset()
 actions = range(LINES)
 policy = agent.get_policy()
 action_distribution = []
-for i in range(100):
+for i in range(10000):
   action_distribution.append(agent.compute_action(initial_state))
 # action_distribution = policy.compute_log_likelihoods(actions = actions, obs_batch = initial_state)
 print(action_distribution)

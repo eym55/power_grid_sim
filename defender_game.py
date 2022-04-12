@@ -15,7 +15,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 logging.getLogger("pypsa").setLevel(logging.CRITICAL)
 np.random.seed(10)
-
+import agents
 class PowerGrid(gym.Env):
 
   """Custom Environment that follows gym interface"""
@@ -23,38 +23,39 @@ class PowerGrid(gym.Env):
 
   def __init__(self, env_config):
     super(PowerGrid, self).__init__()
-    network = env_config['network']
-    attack_distribution = env_config['attack_distribution']
-    timesteps = 15
     #Keep track of timesteps and horizen
-    self.timesteps = timesteps 
+    if 'timesteps' in env_config:
+      self.timesteps = env_config['timesteps']
+    else: self.timesteps=15
     self.current_step = 0
 
-    #Stor network and initial for reset
-    self.network = network
-    self.initial_lines = network.lines.copy()
-    self.initial_loads = network.loads.copy()
+    #Store network and initial for reset
+    self.network = env_config['network']
+    self.initial_lines = self.network.lines.copy()
+    self.initial_loads = self.network.loads.copy()
 
-
-    #List of probabilities for each edge
-    self.attack_distribution = attack_distribution
 
     self.NUM_LINES = self.initial_lines.shape[0]
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
     # Actions are defend line, each action correspoonds to the index of the line to defend.
-    self.action_space = spaces.Discrete(network.lines.shape[0])
+    self.action_space = spaces.Discrete(self.NUM_LINES)
     #Observations are just lines whether they are up or down. 
     lines_obs_space = spaces.Box(np.zeros(self.NUM_LINES,dtype = np.int8), np.ones(self.NUM_LINES,dtype = np.int8), dtype=np.int8)
     loads_obs_space = spaces.Box(np.zeros(self.network.loads.shape[0],dtype = np.int8), np.full(self.network.loads.shape[0],self.network.loads['p_set'].max()), dtype=np.int8)
     self.observation_space = spaces.Dict({"lines": lines_obs_space, "loads":loads_obs_space})
+
+    #Load adversary
+    agent_config = env_config['agent_config']
+    agent_class = env_config['agent_class']
+    self.adversary_agent = agent_class(game_env=self,agent_config=agent_config)
+
   def step(self, action):
     done = False
-    #Sample from attack distribution until we get a line thats not removed
-    attacker_action = None
-    while attacker_action in self.removed_lines:
-      attacker_action = np.random.choice(self.NUM_LINES,p = self.attack_distribution)
+    #get state and adversary action
+    current_state ={'lines':self.lines,'loads':self.network.loads['p_set']}
+    attacker_action = self.adversary_agent.compute_action(current_state)
     # If not defended, remove line and update network
     if action != attacker_action:
         lopf_status = self._apply_attack(attacker_action)
