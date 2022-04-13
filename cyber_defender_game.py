@@ -78,7 +78,7 @@ class PowerGrid(gym.Env):
       if attacker_action != defender_action:
           lopf_status = self._apply_attack(attacker_action) 
       else:
-        lopf_status = ('ok',None)
+        lopf_status = ('ok',None) 
     
     if self.lines_per == 2:
       attack_act = [attacker_action[0], attacker_action[1]]  #convert attacker action to list
@@ -91,9 +91,9 @@ class PowerGrid(gym.Env):
             defender_action = np.random.choice(self.NUM_LINES, size = 2, p = self.attack_distribution) 
             for perm in self.permutations: 
               if defender_action[0] in perm and defender_action[1] in perm:
-                defender_action = perm 
+                defender_action = perm  
       # If not defended, remove lines and update network  
-      if defender_action != attacker_action:
+      if sorted(defender_action) != sorted(attacker_action):
         for line in attacker_action: #for each line in the pair of lines   
           if line in defender_action: #if this action is defended  
             attacker_action.remove(line) #remove from the list of lines to remove
@@ -116,7 +116,7 @@ class PowerGrid(gym.Env):
               if defender_action[0] in perm and defender_action[1] in perm:
                 defender_action = perm
       # If not defended, remove lines and update network
-      if defender_action != attacker_action:
+      if sorted(defender_action) != sorted(attacker_action):
         for line in attacker_action:  #for each line in the triplet of lines
           if line in defender_action: #if this action is defended
             attacker_action.remove(line) #remove from the list of lines to remove
