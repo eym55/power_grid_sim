@@ -78,7 +78,7 @@ class PowerGrid(gym.Env):
         lopf_status = ('ok',None)
     
     if self.lines_per == 2:
-      defend_act = (defender_action[0], defender_action[1])  #convert defender action to tuple  
+      defend_act = [defender_action[0], defender_action[1]]  #convert defender action to tuple  
       print("lines are currently ", self.lines, "defender taking action", defend_act, " at timestep ", self.current_step)
       #Sample from attack distribution until we get a combo of lines none of which have been removed   
       while (attacker_action[0] in self.removed_lines or attacker_action[1] in self.removed_lines):
@@ -143,7 +143,7 @@ class PowerGrid(gym.Env):
     return self.INITIAL_NETWORK.lines.index[attacked_line]
 
   def _apply_attack(self,attacked_lines):
-    if type(attacked_lines) != int: #if more than one line being removed enter loop
+    if len(attacked_lines) > 1: #if more than one line being removed enter loop
       for line in attacked_lines:
         self.lines[line] = 0
         self.removed_lines.add(line)
@@ -152,9 +152,10 @@ class PowerGrid(gym.Env):
         self.network.remove("Line",line) 
     else: #if one line being attacked
       self.lines[attacked_lines] = 0
-      self.removed_lines.add(attacked_lines)
-      lines_to_remove = self._attacked_line_to_line_name(attacked_lines)
-      self.network.remove("Line",lines_to_remove) 
+      self.removed_lines.add(attacked_lines[0])
+      lines_to_remove = self._attacked_line_to_line_name(attacked_lines[0])
+      print('lines_to_remove = ', lines_to_remove)
+      self.network.remove("Line",lines_to_remove)
     try:
       lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
     except Exception as e:
