@@ -14,7 +14,6 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
-
 class PowerGrid(gym.Env):
 
   """Custom Environment that follows gym interface"""
@@ -79,11 +78,12 @@ class PowerGrid(gym.Env):
         lopf_status = ('ok',None)
     
     if self.lines_per == 2:
-      defend_act = (defender_action[0], defender_action[1])  #convert defender action to tuple for 
+      defend_act = (defender_action[0], defender_action[1])  #convert defender action to tuple  
+      print("lines are currently ", self.lines, "defender taking action", defend_act, " at timestep ", self.current_step)
       #Sample from attack distribution until we get a combo of lines none of which have been removed   
       while (attacker_action[0] in self.removed_lines or attacker_action[1] in self.removed_lines):
           if self.network.lines.shape[0] == 1: 
-            attacker_action = np.random.choice(self.action_space, size = 1, p = self.attack_distribution)  
+            attacker_action = np.random.choice(self.action_space, size = 1, p = self.attack_distribution) 
           else: 
             attacker_action = np.random.choice(self.NUM_LINES, size = 2, p = self.attack_distribution) 
             for perm in self.permutations: 

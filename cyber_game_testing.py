@@ -38,7 +38,6 @@ for episode in range(10):
   for i in range(10):
     env_one_per.render()
     action = env_two_per.permutations[np.random.choice(len(env_two_per.permutations))]
-    print("lines are currently ", env_two_per.lines, "defender taking action", action, " at timestep ", env_two_per.current_step)
     obs, rewards, done, info = env_two_per.step(action)
     total_reward += rewards
     if done==True:
