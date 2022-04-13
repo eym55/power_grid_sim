@@ -41,15 +41,22 @@ class PowerGrid(gym.Env):
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
     # Actions are defend line(s), each action correspoonds to the index of the line to defend.
+
+    self.permutations = None
+    self.num_perms = 0 
     
     if self.lines_per == 1:
       self.action_space = spaces.Discrete(network.lines.shape[0])
     elif self.lines_per == 2:
-      combos = itertools.combinations(network.lines.shape[0], 2)
-      self.action_space = spaces.Discrete(combos)
+      combos = itertools.combinations(range(network.lines.shape[0]), 2)
+      self.permutations = [list(pair) for pair in combos]
+      self.num_perms = len(self.permutations)
+      self.action_space = spaces.Discrete(self.num_perms) 
     elif self.lines_per == 3:
-      combos = itertools.combinations(network.lines.shape[0], 3)
-      self.action_space = spaces.Discrete(combos)
+      combos = itertools.combinations(range(network.lines.shape[0]), 3)
+      self.permutations = [list(triple) for triple in combos]
+      self.num_perms = len(self.permutations)
+      self.action_space = spaces.Discrete(self.num_perms) 
 
     #Observations are just lines whether they are up or down. 
     low = np.zeros(self.NUM_LINES,dtype = np.int8)
@@ -58,12 +65,13 @@ class PowerGrid(gym.Env):
 
   def step(self, defender_action): 
     done = False
-    attacker_action = None
-    
+    attacker_action = [None]
+    defend_act = [None] 
+
     if self.lines_per == 1: 
       #Sample from attack distribution until we get a line thats not removed
       while attacker_action in self.removed_lines:
-        attacker_action = np.random.choice(self.NUM_LINES,p = self.attack_distribution)
+        attacker_action = np.random.choice(self.NUM_LINES,p = self.attack_distribution) 
       # If not defended, remove line and update network
       if defender_action != attacker_action:
           lopf_status = self._apply_attack(attacker_action)
@@ -71,16 +79,19 @@ class PowerGrid(gym.Env):
         lopf_status = ('ok',None)
     
     if self.lines_per == 2:
-      #Sample from attack distribution until we get a combo of lines none of which have been removed
-      while any(item in attacker_action for item in self.removed_lines): 
-        if self.network.lines.shape[0] == 1:
-          attacker_action = np.random.choice(self.action_space, size = 1, p = self.attack_distribution)
-        else: 
-          attacker_action = np.random.choice(self.action_space, size = 2, p = self.attack_distribution)
-      # If not defended, remove lines and update network
-      
+      defend_act = self.permutations[defender_action[0]], self.permutations[defender_action[1]]
+      #Sample from attack distribution until we get a combo of lines none of which have been removed 
+      while (attacker_action[0] in self.removed_lines or attacker_action[1] in self.removed_lines):
+          if self.network.lines.shape[0] == 1:
+            attacker_action = np.random.choice(self.action_space, size = 1, p = self.attack_distribution)  
+          else: 
+            attacker_action = np.random.choice(self.NUM_LINES, size = 2, p = self.attack_distribution)
+            for perm in self.permutations:
+              if attacker_action[0] in perm and attacker_action[1] in perm:
+                attacker_action = perm
+      # If not defended, remove lines and update network  
       if defender_action != attacker_action:
-        for line in attacker_action: 
+        for line in attacker_action:
           if line in defender_action: #if this action is defended
             attacker_action.remove(line)
         lopf_status = self._apply_attack(attacker_action) #apply removal to lines that weren't defended
@@ -88,15 +99,18 @@ class PowerGrid(gym.Env):
         lopf_status = ('ok',None)
 
     if self.lines_per == 3:
+      defend_act = self.permutations[defender_action[0]], self.permutations[defender_action[1]], self.permutations[defender_action[2]]
       #Sample from attack distribution until we get a combo of lines none of which have been removed
-      while any(item in attacker_action for item in self.removed_lines): 
-        if self.network.lines.shape[0] == 1:
-          attacker_action = np.random.choice(self.action_space, size = 1, p = self.attack_distribution)
-        elif self.network.lines.shape[0] == 2: 
-          attacker_action = np.random.choice(self.action_space, size = 2, p = self.attack_distribution)
-        else:
-          attacker_action = np.random.choice(self.action_space, size = 3, p = self.attack_distribution)
-
+      while (attacker_action[0] in self.removed_lines or attacker_action[1] in self.removed_lines or attacker_action[2] in self.removed_lines):
+          if self.network.lines.shape[0] == 1:
+            attacker_action = np.random.choice(self.action_space, size = 1, p = self.attack_distribution)
+          elif self.network.lines.shape[0] == 2: 
+            attacker_action = np.random.choice(self.action_space, size = 2, p = self.attack_distribution)
+          else:
+            attacker_action = np.random.choice(self.NUM_LINES, size = 3, p = self.attack_distribution)
+            for perm in self.permutations:
+              if attacker_action[0] in perm and attacker_action[1] in perm:
+                attacker_action = perm
       # If not defended, remove lines and update network
       if defender_action != attacker_action:
         for line in attacker_action: 
@@ -127,13 +141,20 @@ class PowerGrid(gym.Env):
     return self.INITIAL_NETWORK.lines.index[attacked_line]
 
   def _apply_attack(self,attacked_lines):
-    for line in attacked_lines:
-      self.lines[line] = 0
-      self.removed_lines.add(line)
-    lines_to_remove = [self._attacked_line_to_line_name(line) for line in attacked_lines]
-    self.network.remove("Line",lines_to_remove)
+    if type(attacked_lines) != int:
+      for line in attacked_lines:
+        self.lines[line] = 0
+        self.removed_lines.add(line)
+      lines_to_remove = [self._attacked_line_to_line_name(line) for line in attacked_lines]  
+      for line in lines_to_remove:
+        self.network.remove("Line",line) 
+    else:
+      self.lines[attacked_lines] = 0
+      self.removed_lines.add(attacked_lines)
+      lines_to_remove = self._attacked_line_to_line_name(attacked_lines)
+      self.network.remove("Line",lines_to_remove) 
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+      lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
@@ -145,8 +166,10 @@ class PowerGrid(gym.Env):
     if lopf_status[0] != 'ok':
       isFailure = True
       reward = np.inf
-    else:
-      reward = (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p.loc['now'].sum()) #diff between inital (goal) generation and current generation
+    else: 
+      discount_factor = self.timesteps / self.current_step 
+      base_reward = self.network.loads['p_set'].sum()
+      reward = (- base_reward) - (base_reward * discount_factor) #reward for attacker becomes worse and worse every timestep that goes by.
       isFailure = False
     return reward, isFailure
 
