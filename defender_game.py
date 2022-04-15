@@ -213,7 +213,7 @@ class PowerGrid(gym.Env):
     colorBar = plt.figure()
     ax = colorBar.add_axes([0.05, 0.80, 0.9, 0.1])
     cmap = plt.cm.RdYlGn
-    cmap2 = plt.cm.GnBu
+    cmap2 = plt.cm.winter
 
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap)
 
@@ -227,7 +227,7 @@ class PowerGrid(gym.Env):
     # If cartopy giving errors, uncomment line below. Comment out subplots line.
     #fig= plt.figure(figsize=(6, 3))
     #fig, ax = plt.subplots()
-    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(6,3))
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(7,4))
 
     #axes = plt.gca()
     title = "Texas Grid"
@@ -236,11 +236,11 @@ class PowerGrid(gym.Env):
 
 
     data = self.network.plot(ax=ax, title= title, bus_colors=bus_color, bus_cmap=cmap, line_colors=line_color, line_cmap=cmap2 , line_widths = 5.0, bus_sizes = .005)
-    ax.legend(['Power Outflow'])
+    #ax.legend(['Power Outflow'])
 
     #ax.colorbar(location="bottom")
 
-    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], tup,0,0,-50)
+    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], tup,0,-50,-100)
     fileName = "outputs/network" + str(self.current_step) + ".html"
 
     mpld3.plugins.connect(fig, busTooltip)
