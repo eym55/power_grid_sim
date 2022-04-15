@@ -5,10 +5,14 @@ import pandas as pd
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import mpld3
 import re
 import copy
 import warnings
+
+#If cartopy causing errors delete line below then go to fig code in render.
+import cartopy.crs as ccrs
 warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger()
@@ -75,7 +79,6 @@ class PowerGrid(gym.Env):
     #Check if horizon reached
     if self.current_step == self.timesteps:
       done = True
-    
     
     observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
     return  observation, reward, done, {}
@@ -173,18 +176,18 @@ class PowerGrid(gym.Env):
 
   # TODO
 
-  # Add Legend - in progress
+  # Add Legend - in progress - not easy with mpl x pypsa
   # Add Snom interaction w/ lines - added
-  # Normalize/change pSqueeze Values so Viz looks better
-  # Give context of what the agents are doing (text of what happened, reward amt etc.)
-  #
+  # Normalize/change pSqueeze Values so Viz looks better - ask
+  # Give context of what the agents are doing (text of what happened, reward amt etc.) - ask group
+  # Make change map where values are based off bus/line value changes such that differences are easier to spot
+  # Figure out how to access past states of the network ^^
 
   def render(self, mode='human', close=False):
-    # Render the environment to the screen
+    # Render the environment to the screen - ??
 
-    #Reduces bus_num for vis purposes.
-    #Working on better solution
-    def rename_bus_num(ls_bus_nums, reduce_num):
+    # Renames bus_nums so they don't start very high.
+    def rename_bus_num(ls_bus_nums):
       new_ls = []
       for i in range(len(ls_bus_nums)):
         int_bus_num = int(ls_bus_nums[i][4:])
@@ -192,34 +195,53 @@ class PowerGrid(gym.Env):
         new_ls.append("Bus " + str(i+1))
       return new_ls
 
-    bus_num = list(self.network.buses.index)
+    # Renames buses
+    bus_nums = list(self.network.buses.index)
+    new_bus_nums = rename_bus_num(bus_nums)
 
-    new_bus_num = rename_bus_num(bus_num, 300000)
-    bus_p_squeeze = list(self.network.buses_t.p.squeeze())
-
-    #Add more necessary values here
+    # Add more necessary values here
     tup = []
-    max_length = max(len(new_bus_num), len(bus_p_squeeze))
+    bus_p_squeeze = list(self.network.buses_t.p.squeeze())
+    max_length = max(len(new_bus_nums), len(bus_p_squeeze))
     for i in range(max_length):
-      str_p_squeeze = " pSqueeze = " + str(bus_p_squeeze[i])
-      tup.append([new_bus_num[i], str_p_squeeze])
+      #Add new name for units... or delete.
+      str_p_squeeze = " Active Power =  " + str(bus_p_squeeze[i]) + " units"
+      tup.append([new_bus_nums[i], str_p_squeeze])
 
+    #norm_bus_vals = plt.Normalize(min(bus_color), max(bus_color))
+    #
+    colorBar = plt.figure()
+    ax = colorBar.add_axes([0.05, 0.80, 0.9, 0.1])
+    cmap = plt.cm.RdYlGn
+    cmap2 = plt.cm.GnBu
 
-    bus_color = self.network.buses_t.p.squeeze()
+    cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap)
 
-
+    #html_colorBar = mpld3.fig_to_html(colorBar, figid="colorBar")
 
     #print(self.network.lines.describe())
     #print(self.network.buses.index)
+    bus_color = self.network.buses_t.p.squeeze()
     line_color = self.network.lines.s_nom
 
+    # If cartopy giving errors, uncomment line below. Comment out subplots line.
+    #fig= plt.figure(figsize=(6, 3))
+    #fig, ax = plt.subplots()
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(6,3))
 
-    fig = plt.figure(figsize=(6, 3))
+    #axes = plt.gca()
+    title = "Texas Grid"
+    if(len(new_bus_nums) < 30):
+      title = "Lopf Grid"
 
-    data = self.network.plot(bus_colors=bus_color, bus_cmap=plt.cm.RdYlGn, line_colors=line_color, line_widths = 5.0, bus_sizes = .005)
+
+    data = self.network.plot(ax=ax, title= title, bus_colors=bus_color, bus_cmap=cmap, line_colors=line_color, line_cmap=cmap2 , line_widths = 5.0, bus_sizes = .005)
+    ax.legend(['Power Outflow'])
+
+    #ax.colorbar(location="bottom")
 
     busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], tup,0,0,-50)
-    fileName = "outputs/network" + str(self.current_step) + ".html" 
+    fileName = "outputs/network" + str(self.current_step) + ".html"
 
     mpld3.plugins.connect(fig, busTooltip)
 
@@ -233,22 +255,28 @@ class PowerGrid(gym.Env):
     # add more detail about visualization here
     # Write template html file, so some of these vars can be erased.
 
-
     html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1></div>"
+    #Inside box stays white, so it doesn't look great.
+    #bg_html = "<body style = \"background-image: url(\'https://wallpaperaccess.com/full/187161.jpg\');\" ></<body>"
+    #bg_html = "<body style = \"background-color:#E6E6FA;\" ></body>"
 
-    #total_beg_text = update_text + html_text
+    #total_beg_text = html_text + bg_html
     write_file.write(html_text)
     write_file.close()
 
     append_file.write(html_fig)
+    #append_file.write(html_colorBar)
 
-    center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center }}</style>'''
+    center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center; }}</style>'''
 
-    legend_html = "<ul class=\"charts-css legend legend-circle\" float: right;><li> Label 1 </li><li> Label 2 </li><li> Label 3 </li></ul>"
+    #lavender bg
+    #center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center; background-color:#E6E6FA; }}</style>'''
+
+    #legend_html = "<ul class=\"charts-css legend legend-circle\" float: right;>\n<li> Label 1 </li><li> Label 2 </li><li> Label 3 </li></ul>"
     del_axes_css = "<style>g.mpld3-xaxis, g.mpld3-yaxis {display: none;}</style>"
 
 
-    total_css = center_fig_html + legend_html + del_axes_css
+    total_css = center_fig_html + del_axes_css
     append_file.write(total_css)
     append_file.close()
     pass
