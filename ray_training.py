@@ -11,7 +11,7 @@ from ray.tune.logger import pretty_print
 from agents import RandomAgent
 
 ray.init()
-network = pypsa.Network('lopf_grid.nc')
+network = pypsa.Network('texas_grid.nc')
 LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 
