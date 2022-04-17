@@ -219,10 +219,15 @@ class PowerGrid(gym.Env):
       str_p_squeeze = " Active Power =  " + str(bus_p_squeeze[i]) + " units"
       p_squeeze_tuple.append([new_bus_nums[i], str_p_squeeze])
 
-    colorBar = plt.figure()
-    ax = colorBar.add_axes([0.05, 0.80, 0.9, 0.1])
+
+    #Create colormaps
     cmap = plt.cm.RdYlGn
     cmap2 = plt.cm.cividis_r
+
+    # Colorbar not really working with mpld3 or pypsa mpl
+    colorBar = plt.figure()
+    ax = colorBar.add_axes([0.05, 0.80, 0.9, 0.1])
+
 
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap)
 
@@ -234,7 +239,7 @@ class PowerGrid(gym.Env):
     # If cartopy giving errors, uncomment line below. Comment out subplots line.
     #fig= plt.figure(figsize=(6, 3))
     #fig, ax = plt.subplots()
-    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(9, 5))
+    fig, (ax1, ax2) = plt.subplots(2, 1, subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(5, 4))
 
     title = "Texas Grid"
     if(len(new_bus_nums) < 30):
@@ -246,18 +251,23 @@ class PowerGrid(gym.Env):
     new_net.lines = self.initial_lines.copy()
     new_net.loads = self.initial_loads.copy()
 
-    # Using S_nom to represent
+    # Using S_nom to represent lines that are up or down.
+
     new_net.lines['s_nom'] = 1000
     new_net.lines['s_nom'] = new_net.lines['s_nom'] * self.lines
     new_net.lines['s_nom'].replace(0, 10)
 
+    # Trying to fix graph on step 0.
+    if(self.current_step == 0):
+      new_net.lines['s_nom'] = new_net.lines['s_nom'] * 100000
     # Expand on this detail
-    
-    curr_reward_string = "Current Reward is " + str(self._calculate_reward(self._call_lopf())[0])
 
-    data3 = new_net.plot( ax = ax2, title="Lines Removed", bus_colors= bus_color, bus_cmap=plt.cm.YlGn, line_colors = new_net.lines['s_nom'], line_cmap = plt.cm.Reds_r, line_widths = 8,  bus_sizes = .000005)
+    #curr_reward_string = "Current Reward is " + str(self._calculate_reward(self._call_lopf())[0])
 
-    data = self.network.plot(ax=ax1, title=title, bus_colors=bus_color, bus_cmap=cmap, line_colors=line_color, line_cmap=cmap2, line_widths = 3.0, bus_sizes = .005)
+    data = self.network.plot(ax=ax1, title=title, bus_colors=bus_color, bus_cmap=cmap, line_colors=line_color, line_cmap=plt.cm.YlGn_r, line_widths = 3.0, bus_sizes = .005)
+
+
+    data3 = new_net.plot(ax = ax2, title= "Lines Removed", bus_colors= bus_color, bus_cmap=plt.cm.YlGn, line_colors = new_net.lines['s_nom'], line_cmap = plt.cm.Reds_r, line_widths = 4,  bus_sizes = .000005)
     #ax.legend(['Power Outflow'])
 
     #ax.colorbar(location="bottom")
@@ -279,7 +289,7 @@ class PowerGrid(gym.Env):
     # TODO
     # add more detail about visualization here
     # Write template html file, so some of these vars can be erased.
-    html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1><h3>" + str(curr_reward_string)+ "</h3></div>"
+    html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1><h3>" #+ str(curr_reward_string)+ "</h3></div>"
     #Inside box stays white, so it doesn't look great.
     #bg_html = "<body style = \"background-image: url(\'https://wallpaperaccess.com/full/187161.jpg\');\" ></<body>"
     #bg_html = "<body style = \"background-color:#E6E6FA;\" ></body>"
@@ -291,7 +301,7 @@ class PowerGrid(gym.Env):
     append_file.write(html_fig)
     #append_file.write(html_colorBar)
 
-    center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: left; }}</style>'''
+    center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center; }}</style>'''
 
     #lavender bg
     #center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center; background-color:#E6E6FA; }}</style>'''
