@@ -31,29 +31,36 @@ class PowerGrid(gym.Env):
     attack_distribution = env_config['attack_distribution']
     timesteps = 15
     #Keep track of timesteps and horizen
-    self.timesteps = timesteps 
+    self.timesteps = timesteps
     self.current_step = 0
+
 
     #Stor network and initial for reset
     self.network = network
+    self.initial_buses = self.network.buses.copy()
     self.initial_lines = network.lines.copy()
     self.initial_loads = network.loads.copy()
+    self.network.initial = self.network
+    self.current_load = self.network.loads
 
 
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
-
     self.NUM_LINES = self.initial_lines.shape[0]
+
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
     self.removed_lines = {None}
-    # Actions are defend line, each action correspoonds to the index of the line to defend.
+
+    self.removed_lines_this_step=[]
+    # Actions are defend line, each action corresponds to the index of the line to defend.
     self.action_space = spaces.Discrete(network.lines.shape[0])
-    #Observations are just lines whether they are up or down. 
+    #Observations are just lines whether they are up or down.
     lines_obs_space = spaces.Box(np.zeros(self.NUM_LINES,dtype = np.int8), np.ones(self.NUM_LINES,dtype = np.int8), dtype=np.int8)
     loads_obs_space = spaces.Box(np.zeros(self.network.loads.shape[0],dtype = np.int8), np.full(self.network.loads.shape[0],self.network.loads['p_set'].max()), dtype=np.int8)
     self.observation_space = spaces.Dict({"lines": lines_obs_space, "loads":loads_obs_space})
   def step(self, action):
+    self.removed_lines_this_step = []
     done = False
     #Sample from attack distribution until we get a line thats not removed
     attacker_action = None
@@ -65,9 +72,9 @@ class PowerGrid(gym.Env):
     else:
       lopf_status = ('ok',None)
     self.current_step +=1
-    
+
     reward,isFailure = self._calculate_reward(lopf_status)
-    #Check if network is infeasible 
+    #Check if network is infeasible
     if isFailure:
       done = True
     #Check if network has no lines
@@ -79,7 +86,7 @@ class PowerGrid(gym.Env):
     #Check if horizon reached
     if self.current_step == self.timesteps:
       done = True
-    
+
     observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
     return  observation, reward, done, {}
 
@@ -136,7 +143,7 @@ class PowerGrid(gym.Env):
         snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
       load_to_remove = snom_to_load_ratios.index[0]
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
-      self.network.loads.at[load_to_remove,'p_set'] = 0
+      self.network.loads.at[load_to_remove, 'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
     else:
@@ -144,7 +151,7 @@ class PowerGrid(gym.Env):
       self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, np.array([])
-    
+
   def _call_lopf(self):
     try:
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0},solver_logfile=None,store_basis = False,warmstart = False)      # solver_options = {'OutputFlag': 0,'LicenseID':'791591','TokenServer':''}
@@ -166,6 +173,7 @@ class PowerGrid(gym.Env):
 
   def reset(self):
     # Reset the state of the environment to an initial state
+    # If no defends, more users will be harmed
     self.network.lines = self.initial_lines.copy()
     self.network.loads = self.initial_loads.copy()
     self.lines = np.ones(self.NUM_LINES,dtype=np.int8)
@@ -182,6 +190,9 @@ class PowerGrid(gym.Env):
   # Give context of what the agents are doing (text of what happened, reward amt etc.) - ask group
   # Make change map where values are based off bus/line value changes such that differences are easier to spot
   # Figure out how to access past states of the network ^^
+  # Zheng Notes:
+  # Show parts getting attacked, and defended.
+  # Visualization of Hurriacane
 
   def render(self, mode='human', close=False):
     # Render the environment to the screen - ??
@@ -200,50 +211,60 @@ class PowerGrid(gym.Env):
     new_bus_nums = rename_bus_num(bus_nums)
 
     # Add more necessary values here
-    tup = []
+    p_squeeze_tuple = []
     bus_p_squeeze = list(self.network.buses_t.p.squeeze())
     max_length = max(len(new_bus_nums), len(bus_p_squeeze))
     for i in range(max_length):
       #Add new name for units... or delete.
       str_p_squeeze = " Active Power =  " + str(bus_p_squeeze[i]) + " units"
-      tup.append([new_bus_nums[i], str_p_squeeze])
+      p_squeeze_tuple.append([new_bus_nums[i], str_p_squeeze])
 
-    #norm_bus_vals = plt.Normalize(min(bus_color), max(bus_color))
-    #
     colorBar = plt.figure()
     ax = colorBar.add_axes([0.05, 0.80, 0.9, 0.1])
     cmap = plt.cm.RdYlGn
-    cmap2 = plt.cm.winter
+    cmap2 = plt.cm.cividis_r
 
     cb = mpl.colorbar.ColorbarBase(ax, cmap=cmap)
 
     #html_colorBar = mpld3.fig_to_html(colorBar, figid="colorBar")
 
-    #print(self.network.lines.describe())
-    #print(self.network.buses.index)
     bus_color = self.network.buses_t.p.squeeze()
     line_color = self.network.lines.s_nom
 
     # If cartopy giving errors, uncomment line below. Comment out subplots line.
     #fig= plt.figure(figsize=(6, 3))
     #fig, ax = plt.subplots()
-    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(7,4))
+    fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(9, 5))
 
-    #axes = plt.gca()
     title = "Texas Grid"
     if(len(new_bus_nums) < 30):
       title = "Lopf Grid"
 
+    #Create network based off the initial network
+    new_net = self.network.copy()
+    new_net.buses = self.initial_buses.copy()
+    new_net.lines = self.initial_lines.copy()
+    new_net.loads = self.initial_loads.copy()
 
-    data = self.network.plot(ax=ax, title= title, bus_colors=bus_color, bus_cmap=cmap, line_colors=line_color, line_cmap=cmap2 , line_widths = 5.0, bus_sizes = .005)
+    # Using S_nom to represent
+    new_net.lines['s_nom'] = .8
+    new_net.lines['s_nom'] = new_net.lines['s_nom'] * self.lines * 100000
+    new_net.lines['s_nom'].replace(0,.2)
+
+    data3 = new_net.plot( ax = ax2, title="Lines Removed", bus_colors= bus_color, bus_cmap=plt.cm.YlGn, line_colors = new_net.lines['s_nom'], line_cmap = plt.cm.Reds_r, line_widths = 8,  bus_sizes = .000005)
+
+    data = self.network.plot(ax=ax1, title=title, bus_colors=bus_color, bus_cmap=cmap, line_colors=line_color, line_cmap=cmap2, line_widths = 3.0, bus_sizes = .005)
     #ax.legend(['Power Outflow'])
 
     #ax.colorbar(location="bottom")
 
-    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], tup,0,-50,-100)
+    busTooltip = mpld3.plugins.PointHTMLTooltip(data[0], p_squeeze_tuple, 0, -50, -100)
+    #lineTooltip = mpld3.plugins.LineLabelTooltip(list(data[1][0]), tup, 0, -50, -100)
+
     fileName = "outputs/network" + str(self.current_step) + ".html"
 
     mpld3.plugins.connect(fig, busTooltip)
+    #mpld3.plugins.connect(fig, lineTooltip)
 
     html_fig = mpld3.fig_to_html(fig, figid='fig1')
 
@@ -254,7 +275,6 @@ class PowerGrid(gym.Env):
     # TODO
     # add more detail about visualization here
     # Write template html file, so some of these vars can be erased.
-
     html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1></div>"
     #Inside box stays white, so it doesn't look great.
     #bg_html = "<body style = \"background-image: url(\'https://wallpaperaccess.com/full/187161.jpg\');\" ></<body>"
@@ -267,7 +287,7 @@ class PowerGrid(gym.Env):
     append_file.write(html_fig)
     #append_file.write(html_colorBar)
 
-    center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center; }}</style>'''
+    center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: left; }}</style>'''
 
     #lavender bg
     #center_fig_html = f'''<style type="text/css">div#fig1 {{ text-align: center; background-color:#E6E6FA; }}</style>'''
