@@ -247,9 +247,13 @@ class PowerGrid(gym.Env):
     new_net.loads = self.initial_loads.copy()
 
     # Using S_nom to represent
-    new_net.lines['s_nom'] = .8
-    new_net.lines['s_nom'] = new_net.lines['s_nom'] * self.lines * 100000
-    new_net.lines['s_nom'].replace(0,.2)
+    new_net.lines['s_nom'] = 1000
+    new_net.lines['s_nom'] = new_net.lines['s_nom'] * self.lines
+    new_net.lines['s_nom'].replace(0, 10)
+
+    # Expand on this detail
+    
+    curr_reward_string = "Current Reward is " + str(self._calculate_reward(self._call_lopf())[0])
 
     data3 = new_net.plot( ax = ax2, title="Lines Removed", bus_colors= bus_color, bus_cmap=plt.cm.YlGn, line_colors = new_net.lines['s_nom'], line_cmap = plt.cm.Reds_r, line_widths = 8,  bus_sizes = .000005)
 
@@ -275,7 +279,7 @@ class PowerGrid(gym.Env):
     # TODO
     # add more detail about visualization here
     # Write template html file, so some of these vars can be erased.
-    html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1></div>"
+    html_text = "<div style=\"text-align: center;\"><h1> This is Step: " + str(self.current_step+1) + " </h1><h3>" + str(curr_reward_string)+ "</h3></div>"
     #Inside box stays white, so it doesn't look great.
     #bg_html = "<body style = \"background-image: url(\'https://wallpaperaccess.com/full/187161.jpg\');\" ></<body>"
     #bg_html = "<body style = \"background-color:#E6E6FA;\" ></body>"
