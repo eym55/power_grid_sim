@@ -52,6 +52,7 @@ class PowerGrid(gym.Env):
     self.adversary_agent = agent_class(game_env=self,agent_config=agent_config)
 
   def step(self, action):
+    action = None
     done = False
     #get state and adversary action
     current_state ={'lines':self.lines,'loads':self.network.loads['p_set']}
