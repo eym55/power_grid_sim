@@ -37,7 +37,7 @@ for episode in range(10):
   total_reward = 0
   for i in range(10):
     env_two_per.render()
-    action = np.random.choice(env_two_per.lines, size=2)
+    action = np.random.choice(env_two_per.NUM_LINES, size=2)
     print("STARTING ACTION IS",tuple(action))
     obs, rewards, done, info = env_two_per.step(action)
     total_reward += rewards
