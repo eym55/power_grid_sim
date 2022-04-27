@@ -38,13 +38,12 @@ for episode in range(10):
   for i in range(10):
     env_two_per.render()
     action = np.random.choice(env_two_per.NUM_LINES, size=2)
-    print("STARTING ACTION IS",tuple(action))
-    obs, rewards, done, info = env_two_per.step(action)
+    obs, rewards, done, info = env_two_per.step(tuple(action))
     total_reward += rewards
     if done==True:
       break
   print(f"Agent made it {i+1} timesteps and had a total reward of {total_reward}")
-  results_length.append(i)
+  #results_length.append(i)
   results_rewards.append(total_reward)
 print(results_length,np.mean(results_length))
 print(results_rewards,np.mean(results_rewards))
