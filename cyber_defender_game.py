@@ -42,7 +42,7 @@ class PowerGrid(gym.Env):
     self.NUM_LINES = self.INITIAL_NETWORK.lines.shape[0]
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
-    self.removed_lines = [None]
+    self.removed_lines = {None}
     # Actions are defend line, each action correspoonds to the index of the line to defend.
 
     if self.lines_per == 1:
@@ -77,22 +77,21 @@ class PowerGrid(gym.Env):
         lopf_status = ('ok',None) 
     
     if self.lines_per == 2:
-      print("lines are currently ", self.lines, "INTENDED attacker action is  ",attack_act, " at timestep ", self.current_step)
+      print("lines are currently ", str(self.lines), "INTENDED attacker action is  ",attack_act, " at timestep ", self.current_step)
       #Sample from attack distribution until we get a combo of lines none of which have been removed   
       while (defender_action[0] in self.removed_lines or defender_action[1] in self.removed_lines or defender_action[0] == defender_action[1]):
         if self.network.lines.shape[0] == 1: 
           defender_action = tuple(self.network.lines[0]) 
         else: 
           defender_action = tuple(np.random.choice(self.NUM_LINES, size = 2, p = self.attack_distribution))
-        print(defender_action, " is defender action")
       # If not defended, remove lines and update network  
       if sorted(defender_action) != sorted(attack_act): 
         for line in attack_act: #for each line in the pair of lines   
           if line in defender_action: #if this action is defended 
-            attack_act = tuple(list(attack_act).remove(line)) #remove from the list of lines to remove
+            filtered = filter(lambda x: x != line, attack_act)
+            attack_act = tuple(filtered) #remove from the list of lines to remove
         print("FINAL attacker action at timestep", self.current_step, "is ", attack_act)
         lopf_status = self._apply_attack(attack_act) #apply removal to lines that weren't defended
-        print("after removal, lines are", self.network.lines.index)
       else:
         lopf_status = ('ok',None)
 
@@ -150,7 +149,6 @@ class PowerGrid(gym.Env):
     return sclopf_status
 
   def _apply_attack(self,attacked_lines):
-    lines_to_remove = [None]
     if len(attacked_lines) > 1: #if more than one line being removed enter loop
       for line in attacked_lines:
         self.lines[line] = 0
@@ -159,16 +157,18 @@ class PowerGrid(gym.Env):
       for line in lines_to_remove:
         self.network.remove("Line",line) 
     else: #if one line being attacked
-      self.lines[attacked_lines] = 0
+      self.lines[attacked_lines[0]] = 0
       self.removed_lines.add(attacked_lines[0])
       lines_to_remove = self._attacked_line_to_line_name(attacked_lines[0])
       self.network.remove("Line",lines_to_remove)
     try:
+      print("trying LOPF status")
       lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
+      print("STATUS IS", lopf_status)
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
     except Exception as e:
-      print(e)
+      print(e, "ERROR HERE")
       lopf_status = ('Failure',None)
     return lopf_status
 
@@ -186,9 +186,9 @@ class PowerGrid(gym.Env):
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
       except Exception as e:
-        print(e)
+        print(e, "Fails at line 191")
         lopf_status = ('Failure',None)
       return lopf_status, affected_nodes
     if affected_nodes.any():
@@ -199,18 +199,18 @@ class PowerGrid(gym.Env):
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
       except Exception as e:
-        print(e)
+        print(e, "fails at line 204")
         lopf_status = ('Failure',None)
       return lopf_status, affected_nodes
     else:
       load_to_remove = snom_to_load_ratios.index[0]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
       except Exception as e:
-        print(e)
+        print(e, "fails at line 213")
         lopf_status = ('Failure',None)
       return lopf_status, np.array([])
     
