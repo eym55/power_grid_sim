@@ -161,10 +161,14 @@ class PowerGrid(gym.Env):
       self.removed_lines.add(attacked_lines[0])
       lines_to_remove = self._attacked_line_to_line_name(attacked_lines[0])
       self.network.remove("Line",lines_to_remove)
+
+    affected_nodes = []
+    for line in lines_to_remove:
+      affected_nodes.append(self.network.lines.loc[line][['bus0','bus1']].values)
+    print(affected_nodes)
+    
     try:
-      print("trying LOPF status")
       lopf_status = self.network.lopf(pyomo=False,solver_name='cbc')
-      print("STATUS IS", lopf_status)
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
     except Exception as e:
