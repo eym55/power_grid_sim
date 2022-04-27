@@ -93,7 +93,9 @@ class PowerGrid(gym.Env):
       isFailure = True
       reward = 1000
     else:
-      reward = (self.INITIAL_NETWORK.generators_t.p.loc['now'].sum() - self.network.loads_t.p.loc['now'].sum()) #diff between inital (goal) generation and current generation
+      discount_factor = self.timesteps / self.current_step 
+      base_reward = self.network.loads['p_set'].sum()
+      reward = (- base_reward) - (base_reward * discount_factor) #reward for attacker becomes worse and worse every timestep that goes by.
       isFailure = False
     return reward, isFailure
 
