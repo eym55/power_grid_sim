@@ -163,7 +163,7 @@ class PowerGrid(gym.Env):
       self.network.remove("Line",lines_to_remove)
     try:
       print("trying LOPF status")
-      lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
+      lopf_status = self.network.lopf(pyomo=False,solver_name='cbc')
       print("STATUS IS", lopf_status)
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
@@ -186,7 +186,7 @@ class PowerGrid(gym.Env):
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc')
       except Exception as e:
         print(e, "Fails at line 191")
         lopf_status = ('Failure',None)
@@ -199,7 +199,7 @@ class PowerGrid(gym.Env):
       affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc')
       except Exception as e:
         print(e, "fails at line 204")
         lopf_status = ('Failure',None)
@@ -208,7 +208,7 @@ class PowerGrid(gym.Env):
       load_to_remove = snom_to_load_ratios.index[0]
       self.network.remove('Load',load_to_remove)
       try:
-        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc',solver_options = {'OutputFlag': 0})
+        lopf_status = self.network.lopf(pyomo=False,solver_name='cbc')
       except Exception as e:
         print(e, "fails at line 213")
         lopf_status = ('Failure',None)
