@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import random
 from ray.rllib.agents import dqn
+from itertools import combinations
 
 class Agent():
   def __init__(self,game_env,agent_config):
@@ -26,7 +27,9 @@ class RandomAgent(Agent):
     self.action_distribution = agent_config['action_distribution']
 
   def compute_action(self, state):
-    current_distribution = state['lines'] * self.action_distribution
+    #Please
+    current_distribution = np.array([state['lines'][list(action)].prod() for action in self.game_env.actions])
+    # current_distribution = state['lines'] * self.action_distribution
     current_distribution = current_distribution / current_distribution.sum()
     action = np.random.choice(self.action_space.n,p=current_distribution)
     return action

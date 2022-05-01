@@ -9,11 +9,12 @@ import pickle
 import time
 from ray.tune.logger import pretty_print
 from agents import RandomAgent
+from scipy.special import comb
 
 ray.init()
-network = pypsa.Network('texas_grid.nc')
-LINES = network.lines.shape[0]
-attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
+network = pypsa.Network('lopf_grid.nc')
+LINES = int(comb(network.lines.shape[0],2))
+attack_distribution =  np.ones(LINES) / LINES
 
 agent_config = {
   'action_distribution':attack_distribution
@@ -22,12 +23,13 @@ agent_config = {
 env_config = {
   'network':network,
   'agent_config':agent_config,
-  'agent_class':RandomAgent
+  'agent_class':RandomAgent,
+  'lines_per_turn':2
   }
 
 agent = dqn.DQNTrainer(env=PowerGrid, config={
     "env_config": env_config, 
-    "num_workers": 8,
+    "num_workers": 1,
     "n_step": 5,
     "noisy": True,
     "num_atoms": 5,
@@ -36,9 +38,11 @@ agent = dqn.DQNTrainer(env=PowerGrid, config={
 })
 
 #Change the range to desired amount of training iterations
-for i in range(300):
+for i in range(1):
+  # mean_rewards = []
   try:
     pop = agent.train()
+    # mean_rewards.append()
     print(pretty_print(pop))
     time.sleep(5)
     if i % 10 == 0:
