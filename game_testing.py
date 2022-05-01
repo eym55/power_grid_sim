@@ -6,7 +6,11 @@ from agents import RandomAgent,DQNAgent
 from old_defender_game import OldPowerGrid
 import pickle
 
+
+np.random.seed(0)
+
 network = pypsa.Network('lopf_grid.nc')
+
 LINES = network.lines.shape[0]
 attack_distribution =  np.random.dirichlet(np.ones(LINES),size= 1)[0]
 
