@@ -61,21 +61,21 @@ class HurricaneAgent(Agent):
     self.hurricane_path = agent_config['hurricane_path']
     self.time_step = 0
     self.lines = self.game_env.network.lines
-    self.buses = self.network.buses
+    self.buses = self.game_env.network.buses
     self.lines['midpoint'] = self.lines.apply(lambda x:self._calculate_midpoint(x),axis=1)
 
   def _calculate_midpoint(self,row):
     bus_0 = row['bus0']
     bus_1 = row['bus1']
-    bus_0_x = self.buses[bus_0]['x']
-    bus_1_x = self.buses[bus_1]['x']
-    bus_0_y = self.buses[bus_0]['y']
-    bus_1_y = self.buses[bus_1]['y']
-    return np.array[np.mean([bus_0_x,bus_1_x]),np.mean([bus_0_y,bus_1_y])]
+    bus_0_x = self.buses.loc[bus_0]['x']
+    bus_1_x = self.buses.loc[bus_1]['x']
+    bus_0_y = self.buses.loc[bus_0]['y']
+    bus_1_y = self.buses.loc[bus_1]['y']
+    return np.array([np.mean([bus_0_x,bus_1_x]),np.mean([bus_0_y,bus_1_y])])
 
   def compute_action(self,state):
     if self.time_step >= len(self.hurricane_path):
-      raise 'Hurricane has passed'
+      return None
     hurricane_location = np.array(self.hurricane_path[self.time_step])
     distances = self.lines['midpoint'].apply(lambda x: np.linalg.norm(x-hurricane_location))
 

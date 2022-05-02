@@ -8,23 +8,22 @@ from ray.tune.registry import register_env
 import pickle
 import time
 from ray.tune.logger import pretty_print
-from agents import RandomAgent
+from agents import RandomAgent,HurricaneAgent
 from scipy.special import comb
 
 ray.init()
 network = pypsa.Network('lopf_grid.nc')
-LINES = int(comb(network.lines.shape[0],2))
-attack_distribution =  np.ones(LINES) / LINES
+hurricane_path = [(0,0),(1,.5),(2,1),(3,1.5),(4,2),(4.5,2.7),(5,3),(6,3),(7,4),(8,4.5)]
 
 agent_config = {
-  'action_distribution':attack_distribution
+  'hurricane_path':hurricane_path
 }
 
 env_config = {
   'network':network,
   'agent_config':agent_config,
-  'agent_class':RandomAgent,
-  'lines_per_turn':2
+  'agent_class':HurricaneAgent,
+  'lines_per_turn':1
   }
 
 agent = dqn.DQNTrainer(env=PowerGrid, config={
@@ -38,7 +37,7 @@ agent = dqn.DQNTrainer(env=PowerGrid, config={
 })
 
 #Change the range to desired amount of training iterations
-for i in range(1):
+for i in range(500):
   # mean_rewards = []
   try:
     pop = agent.train()

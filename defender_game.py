@@ -12,8 +12,8 @@ import copy
 import warnings
 
 
-#If cartopy causing errors delete line below then go to fig code in render.
-import cartopy.crs as ccrs
+
+
 
 from scipy.special import comb
 from itertools import combinations
@@ -113,6 +113,9 @@ class PowerGrid(gym.Env):
     return sclopf_status
 
   def _apply_attack(self,defended_lines,attacked_lines):
+    if attacked_lines == None:
+      lopf_status = ('ok',None)
+      return lopf_status
     attacked_lines = self.actions[attacked_lines] - self.actions[defended_lines]
     if len(attacked_lines) == 0:
       lopf_status = ('ok',None)
