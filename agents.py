@@ -18,6 +18,8 @@ class Agent():
     pass
   def get_action_distribution(self,state):
     pass
+  def reset(self):
+    pass
 
 class RandomAgent(Agent):
   def __init__(self,game_env,agent_config):
@@ -85,4 +87,7 @@ class HurricaneAgent(Agent):
 
     self.time_step += 1
     return action
-
+  
+  def reset(self):
+    self.time_step = 0
+    

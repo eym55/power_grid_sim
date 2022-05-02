@@ -196,6 +196,7 @@ class PowerGrid(gym.Env):
     self.lines = np.ones(self.NUM_LINES,dtype=np.int8)
     self.removed_lines = {None}
     self.current_step = 0
+    self.adversary_agent.reset()
     observation = {'lines':self.lines,'loads':self.network.loads['p_set']}
     return observation
 
