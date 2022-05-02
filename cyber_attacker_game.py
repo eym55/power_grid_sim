@@ -57,13 +57,10 @@ class PowerGrid(gym.Env):
     self.observation_space = spaces.Box(low, high, dtype=np.int8)
 
   def any_duplicates(self, inpt_list):
-    seen = []
-    for elem in inpt_list:
-      if elem in seen:
-        return True
-      else:
-        seen.append(elem)
-    return False
+    if len(inpt_list) != len(set(inpt_list)): # Since sets contain no duplicates
+      return True
+    else:
+      return False
 
   def step(self, defender_action):
     done = False
