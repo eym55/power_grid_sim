@@ -10,6 +10,7 @@ import time
 from ray.tune.logger import pretty_print
 from agents import RandomAgent
 
+#Initializing relevant variables
 ray.init()
 network = pypsa.Network('lopf_grid.nc')
 LINES = network.lines.shape[0]
@@ -36,6 +37,7 @@ agent = dqn.DQNTrainer(env=PowerGrid, config={
 })
 
 #Change the range to desired amount of training iterations
+#Runs our agent in the environment for specified number of iterations
 for i in range(300):
   try:
     pop = agent.train()
@@ -46,6 +48,6 @@ for i in range(300):
        print("checkpoint saved at", checkpoint)
   except Exception as e:
     print(e)
-    print("FUCK")
+    print("Error has occurred")
     print(i)
 
