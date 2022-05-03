@@ -9,7 +9,7 @@ from defender_game import PowerGrid
 import pypsa
 
 
-
+#initializing network object and DQNAgent
 np.random.seed(0)
 ray.init()
 network = pypsa.Network('lopf_grid.nc')
