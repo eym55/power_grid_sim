@@ -35,7 +35,7 @@ defender = DQNAgent(OldPowerGrid,defend_config)
 
 results_length= []
 results_rewards=[]
-for episode in range(5):
+for episode in range(10):
   total_reward = 0
   done = False
   i=0
