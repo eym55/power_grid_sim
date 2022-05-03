@@ -16,13 +16,13 @@ logger.setLevel(logging.CRITICAL)
 logging.getLogger("pypsa").setLevel(logging.CRITICAL)
 np.random.seed(10)
 
-class OldPowerGrid(gym.Env):
+class PowerGridV1(gym.Env):
 
   """Custom Environment that follows gym interface"""
   metadata = {'render.modes': ['human']}
 
   def __init__(self, env_config):
-    super(OldPowerGrid, self).__init__()
+    super(PowerGridV1, self).__init__()
     network = env_config['network']
     attack_distribution = env_config['attack_distribution']
     timesteps = 15
