@@ -57,10 +57,13 @@ class PowerGrid(gym.Env):
     self.observation_space = spaces.Box(low, high, dtype=np.int8)
 
   def any_duplicates(self, inpt_list):
-    if len(inpt_list) != len(set(inpt_list)): # Since sets contain no duplicates
-      return True
-    else:
-      return False
+    seen = []
+    for elem in inpt_list:
+      if elem in seen:
+        return True
+      else:
+        seen.append(elem)
+    return False
 
   def step(self, defender_action):
     done = False
@@ -145,13 +148,15 @@ class PowerGrid(gym.Env):
         self.removed_lines.add(line)
       lines_to_remove = [self._attacked_line_to_line_name(line) for line in attacked_lines]  
       for line in lines_to_remove:
-        affected_nodes.append(self.network.lines.loc[line][['bus0','bus1']].values)
+        buses = self.network.lines.loc[line][['bus0','bus1']].values
+        for bus in buses:
+          affected_nodes.append(bus)
         self.network.remove("Line",line) 
     else: #if one line being attacked
       self.lines[attacked_lines[0]] = 0
       self.removed_lines.add(attacked_lines[0])
       lines_to_remove = self._attacked_line_to_line_name(attacked_lines[0])
-      affected_nodes.append(self.network.lines.loc[lines_to_remove][['bus0','bus1']].values)
+      affected_nodes = self.network.lines.loc[lines_to_remove][['bus0','bus1']].values
       self.network.remove("Line",lines_to_remove)
 
     try:
@@ -182,8 +187,8 @@ class PowerGrid(gym.Env):
         print(e)
         lopf_status = ('Failure',None)
       return lopf_status, affected_nodes
-    if affected_nodes.any():
-      affected_loads = self.network.loads['bus'].isin(affected_nodes)
+    if len(affected_nodes) > 0:
+      affected_loads = self.network.loads['bus'].isin(list(affected_nodes))
       if not snom_to_load_ratios.loc[affected_loads].empty:
         snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
       load_to_remove = snom_to_load_ratios.index[0]

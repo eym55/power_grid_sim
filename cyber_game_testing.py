@@ -1,6 +1,6 @@
 from pyexpat import model
 import gym
-from cyber_attacker_game import PowerGrid
+from cyber_defender_game import PowerGrid
 import pypsa
 import numpy as np
 from random import sample
@@ -53,9 +53,9 @@ def twoLine():
       total_reward += rewards
       if done==True:
         break
-    print(f"Agent made it {int(i)+1} timesteps and had a total reward of {str(total_reward)}")
-    results_length.append(int(i))
-    results_rewards.append(int(total_reward))
+    print(f"Agent made it {i+1} timesteps and had a total reward of {total_reward}")
+    results_length.append(i)
+    results_rewards.append(total_reward)
   print(results_length,np.mean(results_length))
   print(results_rewards,np.mean(results_rewards))
 
@@ -77,9 +77,9 @@ def threeLine():
       total_reward += rewards
       if done==True:
         break
-    print(f"Agent made it {int(i)+1} timesteps and had a total reward of {str(total_reward)}")
-    results_length.append(int(i))
-    results_rewards.append(int(total_reward))
+    print(f"Agent made it {i+1} timesteps and had a total reward of {total_reward}")
+    results_length.append(i)
+    results_rewards.append(total_reward)
   print(results_length,np.mean(results_length))
   print(results_rewards,np.mean(results_rewards))
 
