@@ -4,14 +4,15 @@ import random
 import matplotlib.pyplot as plt
 random.seed(69)
 network = pypsa.Network()
-
+#Generating 15 buses
 for i in range(15):
     network.add("Bus","Bus {}".format(i))
-
+#Assinging buses lat and long
 for i in range(15):
     network.buses.at[network.buses.index[i], 'x'] = random.randint(0,100)
     network.buses.at[network.buses.index[i], 'y'] = random.randint(0,100)
 
+#Creating a line for each of the edges between buses
 edges = [(0, 12),(0, 4),(0, 5),(1, 10),(1, 3),
 (1, 6),(1, 9),(10, 3),(11, 3),(11, 4),(11, 5),
 (11, 8),(12, 13),(13, 14),(13, 4),(13, 7),
@@ -26,7 +27,7 @@ for i in range(len(edges)):
 
 genBus = [2,3,9,10,13,14]
 loadBus = [0,1,4,5,6,7,8,11,12]
-
+#Add generators and loads at specific buses
 for i in genBus:
     network.add("Generator","Gen {}".format(i),
                 bus="Bus {}".format(i),
@@ -37,5 +38,5 @@ for i in loadBus:
     network.add("Load",f"Load {i}",
                 bus=f"Bus {i}",
                 p_set=random.randint(25,125))
-
+#EXPORT
 network.export_to_netcdf("30line.nc")
