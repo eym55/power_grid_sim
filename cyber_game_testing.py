@@ -1,6 +1,6 @@
 from pyexpat import model
 import gym
-from cyber_defender_game import PowerGrid
+from cyber_attacker_game import PowerGrid
 import pypsa
 import numpy as np
 from random import sample
@@ -25,7 +25,7 @@ def oneLine():
       env_one_per.render()
       action = np.random.choice(range(LINES)) 
       while action in env_one_per.removed_lines:
-        action = action = np.random.choice(range(LINES)) 
+        action = np.random.choice(range(LINES)) 
       obs, rewards, done, info = env_one_per.step(action)
       total_reward += rewards
       if done==True:
@@ -48,7 +48,6 @@ def twoLine():
       action = np.random.choice(env_two_per.NUM_LINES, size=2)
       while (action[0] == action[1] or action[0] in env_two_per.removed_lines or action[1] in env_two_per.removed_lines): 
         action = np.random.choice(env_two_per.NUM_LINES, size=2)
-        print('got 2 of the same, new attacker action is', action)
       obs, rewards, done, info = env_two_per.step(tuple(action))
       total_reward += rewards
       if done==True:
@@ -72,7 +71,6 @@ def threeLine():
       #print(action)
       while env_3_per.any_duplicates(action) or action[0] in env_3_per.removed_lines or action[1] in env_3_per.removed_lines or action[2] in env_3_per.removed_lines:
         action = np.random.choice(env_3_per.NUM_LINES, size=3)
-        print('got 2+ of the same or some already removed lines, new attacker action is', action)
       obs, rewards, done, info = env_3_per.step(tuple(action))
       total_reward += rewards
       if done==True:

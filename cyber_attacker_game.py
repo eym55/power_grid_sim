@@ -31,6 +31,7 @@ class PowerGrid(gym.Env):
     #Stor network and initial for reset
     self.INITIAL_NETWORK = network
     self.network = network.copy()
+    self.initial_loads = self.INITIAL_NETWORK.loads['p_set'].sum()
 
     #List of probabilities for each edge
     self.attack_distribution = attack_distribution
@@ -78,12 +79,11 @@ class PowerGrid(gym.Env):
         attacker_action = tuple([np.random.choice(self.NUM_LINES,p = self.attack_distribution)])
       # If not defended, remove line and update network
       if attacker_action != defender_action:
-          lopf_status = self._apply_attack(tuple([attacker_action])) 
+          lopf_status = self._apply_attack(attacker_action) 
       else:
         lopf_status = ('ok',None) 
     
     if self.lines_per == 2:
-      print("lines are currently ", str(self.lines), "INTENDED defender action is  ",defend_act, " at timestep ", self.current_step)
       #Sample from attack distribution until we get a combo of lines none of which have been removed   
       while (attacker_action[0] in self.removed_lines or attacker_action[1] in self.removed_lines or attacker_action[0] == attacker_action[1]):
         if self.network.lines.shape[0] == 1: 
@@ -116,7 +116,6 @@ class PowerGrid(gym.Env):
           if line in defender_action: #if this action is defended
             filtered = filter(lambda x: x != line, attacker_action)
             attacker_action = tuple(filtered) #remove from the list of lines to remove
-        print("attacker action at timestep", self.current_step, "is ", attacker_action)
         lopf_status = self._apply_attack(attacker_action) #apply removal to lines that weren't defended
       else:
         lopf_status = ('ok',None) 
@@ -152,10 +151,10 @@ class PowerGrid(gym.Env):
         buses = self.network.lines.loc[line][['bus0','bus1']].values
         for bus in buses:
           affected_nodes.append(bus)
-        self.network.remove("Line",line) 
+        self.network.remove("Line",line)
     else: #if one line being attacked
       self.lines[attacked_lines[0]] = 0
-      self.removed_lines.add(attacked_lines[0])
+      self.removed_lines.add(attacked_lines[0])  
       lines_to_remove = self._attacked_line_to_line_name(attacked_lines[0])
       affected_nodes = self.network.lines.loc[lines_to_remove][['bus0','bus1']].values
       self.network.remove("Line",lines_to_remove)
@@ -218,9 +217,9 @@ class PowerGrid(gym.Env):
       isFailure = True
       reward = 1000
     else:
-      discount_factor = self.timesteps / self.current_step 
-      base_reward = self.network.loads['p_set'].sum()
-      reward = (- base_reward) - (base_reward * discount_factor) #reward for attacker becomes worse and worse every timestep that goes by.
+      discount_factor = self.current_step / self.timesteps 
+      base_reward = self.initial_loads - self.network.loads['p_set'].sum() #diff between initial load and current, essentially the damage done
+      reward = base_reward - (base_reward * discount_factor) #reward for attacker becomes worse and worse every timestep that goes by.
       isFailure = False
     return reward, isFailure
 
