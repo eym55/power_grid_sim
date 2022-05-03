@@ -12,7 +12,7 @@ import copy
 import warnings
 
 #If cartopy causing errors delete line below then go to fig code in render.
-import cartopy.crs as ccrs
+# import cartopy.crs as ccrs
 warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger()
@@ -28,8 +28,7 @@ class PowerGrid(gym.Env):
   def __init__(self, env_config):
     super(PowerGrid, self).__init__()
     #Keep track of timesteps and horizen
-    #TODO I think this is for rendering
-    self.current_load = self.network.loads
+
     if 'timesteps' in env_config:
       self.timesteps = env_config['timesteps']
     else: self.timesteps=15
@@ -41,6 +40,8 @@ class PowerGrid(gym.Env):
     self.initial_loads = self.network.loads.copy()
     self.initial_buses = self.network.buses.copy()
     self.NUM_LINES = self.initial_lines.shape[0]
+    #TODO I think this is for rendering
+    self.current_load = self.network.loads
 
     #Status of each line, start active
     self.lines = np.ones(self.NUM_LINES,dtype = np.int8)
