@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt, mpld3
 network = pypsa.Network()
 
-#FORMATTING
+#Formatting the raw data
 bus = pd.read_csv('base_grid/bus.csv')
 sub = pd.read_csv('base_grid/sub.csv')
 sub = sub.drop(columns = 'interconnect')
