@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt, mpld3
 random.seed(69)
 network = pypsa.Network()
+#Adding buses and lat and long
 for i in range(8):
     network.add("Bus","Bus {}".format(i))
 network.buses.at[network.buses.index[0], 'x'] = 0
@@ -29,7 +30,7 @@ network.buses.at[network.buses.index[6], 'y'] = 0
 
 network.buses.at[network.buses.index[7], 'x'] = 9
 network.buses.at[network.buses.index[7], 'y'] = 0
-
+#Adding lines between buses
 edges = [(0,1),(0,3),(0,4),(0,5),(1,3),(1,7),(1,2),(2,6),(2,7),(3,4),(3,5),(3,6),(5,6),(6,7)]
 for i in range(len(edges)):
     network.add("Line","Linine {}".format(i),
@@ -59,4 +60,4 @@ for i in [0,1,5,6,7]:
                 bus=f"Bus {i}",
                 p_set=random.randint(25,125))
 
-network.export_to_netcdf("lopf_grid.nc")
+network.export_to_netcdf("sample_grid.nc")
