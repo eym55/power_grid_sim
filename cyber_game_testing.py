@@ -68,7 +68,6 @@ def threeLine():
     for i in range(10):
       env_3_per.render()
       action = np.random.choice(env_3_per.NUM_LINES, size=3)
-      #print(action)
       while env_3_per.any_duplicates(action) or action[0] in env_3_per.removed_lines or action[1] in env_3_per.removed_lines or action[2] in env_3_per.removed_lines:
         action = np.random.choice(env_3_per.NUM_LINES, size=3)
       obs, rewards, done, info = env_3_per.step(tuple(action))
