@@ -1,6 +1,6 @@
 from pyexpat import model
 import gym
-from cyber_defender_game import PowerGrid
+from cyber_attacker_game import PowerGrid
 import pypsa
 import numpy as np
 from random import sample
