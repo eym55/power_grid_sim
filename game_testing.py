@@ -21,7 +21,8 @@ agent_config = {
 env_config = {
   'network':network,
   'agent_config':agent_config,
-  'agent_class':RandomAgent}
+  'agent_class':RandomAgent,
+  'lines_per_turn' :1}
 env = PowerGrid(env_config)
 defend_distribution = np.random.dirichlet(np.ones(LINES),size= 1)[0]
 defend_config = {
@@ -36,7 +37,7 @@ defend_config = {
     "v_max": 1000.0,
     }
 }
-defender = DQNAgent(OldPowerGrid,defend_config)
+# defender = DQNAgent(OldPowerGrid,defend_config)
 
 # results_length= []
 # results_rewards=[]
@@ -64,6 +65,31 @@ defender = DQNAgent(OldPowerGrid,defend_config)
 
 # defender = RandomAgent(env,{'action_distribution':np.ones(LINES)})
 
+# results_length= []
+# results_rewards=[]
+# for episode in range(1000):
+#   total_reward = 0
+#   done = False
+#   i=0
+#   obs = env.reset()
+#   action = 1
+#   while done == False:
+#     obs, rewards, done, info = env.step(action)
+#     action = defender.compute_action(obs)
+#     i+=1
+#     total_reward += rewards
+#   results_length.append(i)
+#   results_rewards.append(total_reward)
+#   print(f"\n\n\n Episode {episode} done \n\n\n")
+
+# print(f"\n\n\n No defense Done \n\n\n")
+# with open('NoDefense_rewards.pkl', 'wb') as f:
+#   pickle.dump(results_rewards, f)
+# with open('NoDefense_lengths.pkl', 'wb') as f:
+#   pickle.dump(results_length, f)
+
+
+defender = RandomAgent(env,{'action_distribution':attack_distribution})
 results_length= []
 results_rewards=[]
 for episode in range(1000):
@@ -81,8 +107,8 @@ for episode in range(1000):
   results_rewards.append(total_reward)
   print(f"\n\n\n Episode {episode} done \n\n\n")
 
-print(f"\n\n\n No defense Done \n\n\n")
-with open('NoDefense_rewards.pkl', 'wb') as f:
+print(f"\n\n\n  Heuristic Done \n\n\n")
+with open('heuristic_rewards.pkl', 'wb') as f:
   pickle.dump(results_rewards, f)
-with open('NoDefense_lengths.pkl', 'wb') as f:
+with open('heuristic_lengths.pkl', 'wb') as f:
   pickle.dump(results_length, f)

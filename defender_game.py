@@ -12,9 +12,6 @@ import copy
 import warnings
 
 
-
-
-
 from scipy.special import comb
 from itertools import combinations
 
@@ -130,9 +127,9 @@ class PowerGrid(gym.Env):
     affected_nodes = np.array(affected_nodes)
     try:
       lopf_status = self._call_lopf()
-      #TODO was this breaking shit?
-      # if lopf_status[0] == 'Failure':
-      #   raise(Exception)
+      # TODO was this breaking shit?
+      if lopf_status[0] == 'Failure':
+        raise(Exception)
       while lopf_status[0] != 'ok':
         lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
     except Exception as e:
