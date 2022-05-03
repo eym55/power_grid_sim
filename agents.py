@@ -18,6 +18,7 @@ class Agent():
   def get_action_distribution(self,state):
     pass
 
+#chooses a random line from the network to attack
 class RandomAgent(Agent):
   def __init__(self,game_env,agent_config):
     self.game_env = game_env
@@ -36,6 +37,7 @@ class RandomAgent(Agent):
     current_distribution = current_distribution / current_distribution.sum()
     return current_distribution
 
+#class to choose a line from the network from a trained DQN agent
 class DQNAgent(Agent):
   def __init__(self,game_env,agent_config):
     self.game_env = game_env
@@ -49,6 +51,8 @@ class DQNAgent(Agent):
     action = self.agent.compute_action(state)
     return action
 
+#chooses a line to attack from the network based on proximity to the hurricane eye
+#the hurricane eye is defined by a set of coordinates, or path
 class HurricaneAgent(Agent):
   def __init__(self,game_env,agent_config):
     self.game_env = game_env
@@ -61,6 +65,7 @@ class HurricaneAgent(Agent):
     self.buses = self.network.buses
     self.lines['midpoint'] = self.lines.apply(lambda x:self._calculate_midpoint(x),axis=1)
 
+  #calculates the midpoint of a line, to calulate distance between the hurricane eye and the line
   def _calculate_midpoint(self,row):
     bus_0 = row['bus0']
     bus_1 = row['bus1']
