@@ -38,15 +38,15 @@ defend_config = {
 }
 defender = DQNAgent(PowerGridV1,defend_config)
 
-
 results_length= []
 results_rewards=[]
-for episode in range(1000):
+num_episodes = 25
+for episode in range(num_episodes):
   total_reward = 0
   done = False
   i=0
   obs = env.reset()
-  action = 1
+  action = defender.compute_action(obs)
   while done == False:
     obs, rewards, done, info = env.step(action)
     action = defender.compute_action(obs)
@@ -54,10 +54,7 @@ for episode in range(1000):
     total_reward += rewards
   results_length.append(i)
   results_rewards.append(total_reward)
-  print(f"\n\n\n Episode {episode} done \n\n\n")
+  print(f"\n\n\n Episode {episode} done. Episode lasted {i} timesteps and had a cumulative reward of {total_reward} \n\n\n")
 
-print(f"\n\n\n heuristic Done \n\n\n")
-with open('results/heuristic_rewards.pkl', 'wb') as f:
-  pickle.dump(results_rewards, f)
-with open('results/heuristic_lengths.pkl', 'wb') as f:
-  pickle.dump(results_length, f)
+print(f"\n\n\n All {num_episodes} have completed. \n\n\n")
+print(f"The average episode rewards was {np.mean(results_rewards)} and the mean episode length was {np.mean(results_length)} timesteps")
