@@ -1,7 +1,7 @@
 import gym, ray
 #Import any agents you want to train, list found here: https://docs.ray.io/en/latest/rllib/rllib-algorithms.html
 from ray.rllib.agents import ppo,dqn,a3c
-from defender_game import PowerGrid
+from environments.defender_game import PowerGrid
 import pypsa
 import numpy as np
 from ray.tune.registry import register_env
