@@ -18,6 +18,7 @@ logger.setLevel(logging.CRITICAL)
 logging.getLogger("pypsa").setLevel(logging.CRITICAL)
 np.random.seed(10)
 import agents
+
 class PowerGrid(gym.Env):
 
   """Custom Environment that follows gym interface"""
@@ -58,6 +59,7 @@ class PowerGrid(gym.Env):
     #Call lopf on initial to ensure network begins feasible
     initial_lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = True)
     if initial_lopf_status[0] != 'ok':
+      print(initial_lopf_status)
       raise ValueError('The original network is not feasible')
   def step(self, action):
     done = False
@@ -161,8 +163,6 @@ class PowerGrid(gym.Env):
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = False,warmstart = False) 
     except Exception as e:
       print(e)
-      print(self.network.lines)
-      print(self.network.loads.p_set)
       lopf_status = ('Failure',None)
     return lopf_status
 

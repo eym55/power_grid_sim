@@ -2,7 +2,8 @@ import pypsa
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-random.seed(69)
+random.seed(0)
+np.random.seed(0)
 network = pypsa.Network()
 #Generating 15 buses
 for i in range(15):
@@ -23,7 +24,7 @@ for i in range(len(edges)):
                 bus0="Bus {}".format(edges[i][0]),
                 bus1="Bus {}".format(edges[i][1]),
                 x=0.0001,
-                s_nom=60)
+                s_nom=np.random.normal(loc=120,scale=40))
 
 genBus = [2,3,9,10,13,14]
 loadBus = [0,1,4,5,6,7,8,11,12]
@@ -31,12 +32,17 @@ loadBus = [0,1,4,5,6,7,8,11,12]
 for i in genBus:
     network.add("Generator","Gen {}".format(i),
                 bus="Bus {}".format(i),
-                p_nom=300,
-                marginal_cost=random.randint(25,75))
+                p_nom=random.randint(200,600),
+                marginal_cost=1)
 
 for i in loadBus:
     network.add("Load",f"Load {i}",
                 bus=f"Bus {i}",
                 p_set=random.randint(25,125))
+
+initial_lopf_status = network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = True)
+if initial_lopf_status[0] != 'ok':
+  print(initial_lopf_status)
+  raise ValueError('The original network is not feasible')
 #EXPORT
 network.export_to_netcdf("30line.nc")
