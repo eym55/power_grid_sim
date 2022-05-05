@@ -55,6 +55,10 @@ class PowerGrid(gym.Env):
     agent_class = env_config['agent_class']
     self.adversary_agent = agent_class(game_env=self,agent_config=agent_config)
 
+    #Call lopf on initial to ensure network begins feasible
+    initial_lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = True)
+    if initial_lopf_status[0] != 'ok':
+      raise ValueError('The original network is not feasible')
   def step(self, action):
     done = False
     #get state and adversary action
@@ -62,11 +66,7 @@ class PowerGrid(gym.Env):
     attacker_action = self.adversary_agent.compute_action(current_state)
     # If not defended, remove line and update network
     lopf_status = self._apply_attack(action,attacker_action)
-    #TODO fix
-    # if action != attacker_action:
-    #     lopf_status = self._apply_attack(action,attacker_action)
-    # else:
-    #   lopf_status = ('ok',None)
+
     self.current_step +=1
     
     reward,isFailure = self._calculate_reward(lopf_status)
@@ -101,8 +101,8 @@ class PowerGrid(gym.Env):
     self.network.generators_t.p_set.loc[now] = self.network.generators_t.p.loc[now]
     return sclopf_status
 
-  def _apply_attack(self,defended_lines,attacked_lines):
-    attacked_lines = self.actions[attacked_lines] - self.actions[defended_lines]
+  def _apply_attack(self,defender_action,attacker_action):
+    attacked_lines = self.actions[attacker_action] - self.actions[defender_action]
     if len(attacked_lines) == 0:
       lopf_status = ('ok',None)
       return lopf_status
@@ -113,16 +113,12 @@ class PowerGrid(gym.Env):
       line_to_remove = self._attacked_line_to_line_name(line)
       affected_nodes.extend(list(self.network.lines.loc[line_to_remove][['bus0','bus1']].values))
       self.network.remove("Line",line_to_remove)
-    affected_nodes = np.array(affected_nodes)
-    try:
-      lopf_status = self._call_lopf()
-      #TODO was this breaking shit?
-      # if lopf_status[0] == 'Failure':
-      #   raise(Exception)
-      while lopf_status[0] != 'ok':
-        lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
-    except Exception as e:
-      lopf_status = ('Failure',None)
+
+    lopf_status = self._call_lopf()
+
+    while lopf_status[0] == 'warning':
+      lopf_status,affected_nodes = self._fix_infeasibility(affected_nodes)
+
     return lopf_status
 
   # Helper method to iterativly remove loads until network is feasible.
@@ -132,20 +128,25 @@ class PowerGrid(gym.Env):
       bus = row['bus']
       load = row['p_set']
       return self.network.lines[(self.network.lines['bus0'] == bus) | (self.network.lines['bus1'] == bus)]['s_nom'].sum() / load
+    #Get ratio of snom in to load at node.
     snom_to_load_ratios = self.network.loads[self.network.loads != 0].apply(lambda x: snom_over_load(x),axis=1).sort_values(ascending = True)
     #Remove any nodes that have cumulative s_nom < their load
     if snom_to_load_ratios.iloc[0] < 1:
       load_to_remove = snom_to_load_ratios.index[0]
-      affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
+      #If load in affected, remove that
+      if self.network.loads.loc[load_to_remove].bus in affected_nodes:
+        affected_nodes.remove(self.network.loads.loc[load_to_remove].bus)
       self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
-    if affected_nodes.any():
+    if affected_nodes:
       affected_loads = self.network.loads['bus'].isin(affected_nodes)
       if not snom_to_load_ratios.loc[affected_loads].empty:
         snom_to_load_ratios = snom_to_load_ratios.loc[affected_loads]
       load_to_remove = snom_to_load_ratios.index[0]
-      affected_nodes = affected_nodes[affected_nodes != self.network.loads.loc[load_to_remove].bus]
+      #If load in affected, remove that
+      if self.network.loads.loc[load_to_remove].bus in affected_nodes:
+        affected_nodes.remove(self.network.loads.loc[load_to_remove].bus)
       self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
       return lopf_status, affected_nodes
@@ -153,13 +154,15 @@ class PowerGrid(gym.Env):
       load_to_remove = snom_to_load_ratios.index[0]
       self.network.loads.at[load_to_remove,'p_set'] = 0
       lopf_status = self._call_lopf()
-      return lopf_status, np.array([])
+      return lopf_status, []
     
   def _call_lopf(self):
     try:
       lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = False,warmstart = False) 
     except Exception as e:
       print(e)
+      print(self.network.lines)
+      print(self.network.loads.p_set)
       lopf_status = ('Failure',None)
     return lopf_status
 
