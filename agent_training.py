@@ -42,11 +42,10 @@ def run_training(output_dir,agent,experiment_name,epochs = 500):
   consecutive_errors = 0
   total_errors = 0
   for i in range(epochs):
+    logging.info(f"Experiment: {experiment_name}, Epoch: {i}")
     try:
-      logging.info(f"Experiment: {experiment_name}, Epoch: {i}")
       epoch_result = agent.train()
       logging.info(pretty_print(epoch_result))
-      time.sleep(5)
       if i % 10 == 0:
         checkpoint = agent.save(f'{output_dir}checkpoint{i+1}')
         logging.info(f"checkpoint saved at: {checkpoint}")
@@ -59,6 +58,7 @@ def run_training(output_dir,agent,experiment_name,epochs = 500):
       if consecutive_errors >=5:
         logging.error("5 Errors in a row. Moving on.")
         return
+    time.sleep(1)
 
 
 
@@ -87,7 +87,7 @@ for network_path in networks:
 
     agent_config = {
       "env_config": env_config, 
-      "num_workers": 8,
+      "num_workers": 1,
       "n_step": 5,
       "noisy": True,
       "num_atoms": 5,
@@ -110,6 +110,6 @@ for network_path in networks:
     
     logging.info(f"Beginning training for {experiment_name}")
     run_training(output_dir,agent,experiment_name = experiment_name)
-    time.sleep(10)
+    time.sleep(30)
     
 

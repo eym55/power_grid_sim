@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 from pypsa import Network
+import pypsa
 import pandas as pd
 import numpy as np
 import random
@@ -11,6 +12,7 @@ import copy
 import warnings
 from scipy.special import comb
 from itertools import combinations
+import time
 warnings.filterwarnings("ignore")
 import logging
 logger = logging.getLogger()
@@ -57,10 +59,11 @@ class PowerGrid(gym.Env):
     self.adversary_agent = agent_class(game_env=self,agent_config=agent_config)
 
     #Call lopf on initial to ensure network begins feasible
-    initial_lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = True)
+    initial_lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None)
     if initial_lopf_status[0] != 'ok':
       print(initial_lopf_status)
       raise ValueError('The original network is not feasible')
+
   def step(self, action):
     done = False
     #get state and adversary action
@@ -160,7 +163,8 @@ class PowerGrid(gym.Env):
     
   def _call_lopf(self):
     try:
-      lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = False,warmstart = False) 
+      lopf_status = pypsa.linopf.network_lopf(n=self.network,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = False,warmstart = False,keep_files=False) 
+      # lopf_status = self.network.lopf(pyomo=False,solver_name='gurobi',solver_options = {'OutputFlag': 0,'SOLUTION_LIMIT':1},solver_logfile=None,store_basis = False,warmstart = False,skip_objective= True) 
     except Exception as e:
       print(e)
       lopf_status = ('Failure',None)
