@@ -29,7 +29,8 @@ class RandomAgent(Agent):
 
     #Picks which action the agent will carry out
   def compute_action(self, state):
-    current_distribution = state['lines'] * self.action_distribution
+    current_distribution = np.array([state['lines'][list(action)].prod() for action in self.game_env.actions])
+    # current_distribution = state['lines'] * self.action_distribution
     current_distribution = current_distribution / current_distribution.sum()
     action = np.random.choice(self.action_space.n,p=current_distribution)
     return action
